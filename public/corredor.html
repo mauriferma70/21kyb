@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Perfil de corredor — 21K Yerba Buena</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@300;400;600;700;900&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/assets/style.css">
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+
+<nav class="nav">
+  <a href="/" class="nav-logo">
+    <div class="logo-box"><span class="logo-n">21</span><span class="logo-k">k</span></div>
+    <span class="logo-s">Yerba Buena</span>
+  </a>
+  <div class="nav-tabs">
+    <a href="/"         class="ntab">Inicio</a>
+    <a href="/buscar"   class="ntab">Buscar</a>
+    <a href="/rankings" class="ntab">Rankings</a>
+    <a href="/admin"    class="ntab">Admin</a>
+  </div>
+</nav>
+
+<div id="loading" style="padding:8rem 2rem;text-align:center;color:var(--text3)">Cargando perfil...</div>
+<div id="notfound" style="display:none;padding:8rem 2rem;text-align:center;">
+  <div style="font-family:var(--font-d);font-size:2rem;font-weight:900;margin-bottom:.5rem">Corredor no encontrado</div>
+  <div style="color:var(--text3);margin-bottom:1.5rem">El ID solicitado no existe en la base de datos.</div>
+  <a href="/buscar" class="btn-g" style="display:inline-block">← Volver a buscar</a>
+</div>
+
+<div id="profile" style="display:none;">
+
+  <!-- Header del corredor -->
+  <div style="padding:5rem 1.5rem 0;max-width:900px;margin:0 auto;">
+    <div style="display:flex;align-items:center;gap:1.2rem;flex-wrap:wrap;margin-bottom:2rem;">
+      <div id="pAvatar" style="width:64px;height:64px;border-radius:50%;background:rgba(120,192,44,.15);border:2px solid rgba(120,192,44,.3);display:flex;align-items:center;justify-content:center;font-family:var(--font-d);font-weight:900;font-size:1.5rem;color:var(--accent);flex-shrink:0;"></div>
+      <div>
+        <div id="pName" style="font-family:var(--font-d);font-size:2.2rem;font-weight:900;text-transform:uppercase;line-height:1;"></div>
+        <div style="display:flex;gap:.8rem;margin-top:.4rem;flex-wrap:wrap;align-items:center;">
+          <span id="pRid" class="rid" style="font-size:.95rem;"></span>
+          <span id="pGender" style="font-size:.75rem;color:var(--text3);background:var(--bg3);padding:.15rem .6rem;border-radius:4px;"></span>
+          <span id="pProvince" style="font-size:.75rem;color:var(--text3);"></span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Stats cards -->
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:.8rem;margin-bottom:2.5rem;" id="pStats"></div>
+  </div>
+
+  <!-- Historial de resultados -->
+  <div class="section" style="padding-top:0;">
+    <div class="sec-h" style="margin-bottom:1rem;">
+      <div><div class="sec-t">Historial de carreras</div></div>
+      <div style="display:flex;gap:.4rem;">
+        <button class="bxs df" id="fAll"   onclick="filterDist('all')" >Todas</button>
+        <button class="bxs df" id="f21K"   onclick="filterDist('21K')">21K</button>
+        <button class="bxs df" id="f10K"   onclick="filterDist('10K')">10K</button>
+        <button class="bxs df" id="f5K"    onclick="filterDist('5K')" >5K</button>
+      </div>
+    </div>
+    <div class="tbl-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Año</th><th>Distancia</th><th>Categoría</th>
+            <th>Tiempo</th><th>Pos. gral</th><th>Pos. cat.</th>
+          </tr>
+        </thead>
+        <tbody id="pResults"></tbody>
+      </table>
+      <div id="pEmpty" style="display:none;padding:1.5rem;text-align:center;color:var(--text3);font-size:.85rem;">Sin resultados para este filtro.</div>
+    </div>
+
+    <!-- Gráfico de evolución -->
+    <div id="chartSection" style="display:none;">
+      <div class="sec-t" style="margin-bottom:1rem;">Evolución de tiempos — <span id="chartDist">21K</span></div>
+      <div style="background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:1.5rem;">
+        <canvas id="evolChart" height="100"></canvas>
+      </div>
+    </div>
+  </div>
+</div>
+
+<footer>
+  <strong>21K Yerba Buena</strong> · Estadísticas históricas · Tucumán, Argentina<br>
+  <em>El DNI nunca es visible públicamente.</em>
+</footer>
+
+<script src="/assets/api.js"></script>
+<script>
+let allResults = [];
+let evolChartInst = null;
+
+// Get runner_id from URL: /corredor/RB000001
+const runnerId = location.pathname.split('/').pop().toUpperCase();
+
+async function loadProfile() {
+  try {
+    const data = await API.getRunner(runnerId);
+    if (data.error) { showNotFound(); return; }
+    renderProfile(data);
+  } catch(e) {
+    showNotFound();
+  }
+}
+
+function showNotFound() {
+  document.getElementById('loading').style.display = 'none';
+  document.getElementById('notfound').style.display = 'block';
+}
+
+function renderProfile({ runner, results, stats }) {
+  document.getElementById('loading').style.display = 'none';
+  document.getElementById('profile').style.display = 'block';
+  document.title = `${runner.name} ${runner.surname} — 21K Yerba Buena`;
+
+  // Avatar
+  document.getElementById('pAvatar').textContent = runner.name[0] + runner.surname[0];
+  document.getElementById('pName').textContent = `${runner.name} ${runner.surname}`;
+  document.getElementById('pRid').textContent = runner.runner_id;
+  document.getElementById('pGender').textContent = runner.gender === 'M' ? 'Masculino' : 'Femenino';
+  document.getElementById('pProvince').textContent = runner.province || '';
+
+  // Stats
+  const s = stats;
+  const chips = [
+    { v: s.total_races, l: 'Carreras' },
+    s['21K'] ? { v: s['21K'].best_time, l: 'Mejor 21K' } : null,
+    s['10K'] ? { v: s['10K'].best_time, l: 'Mejor 10K' } : null,
+    s['5K']  ? { v: s['5K'].best_time,  l: 'Mejor 5K'  } : null,
+    s['21K']?.best_position ? { v: '#' + s['21K'].best_position, l: 'Mejor pos.' } : null,
+    s['21K']?.improvement_formatted ? { v: '−' + s['21K'].improvement_formatted, l: 'Mejora 21K' } : null,
+  ].filter(Boolean);
+
+  document.getElementById('pStats').innerHTML = chips.map(c => `
+    <div style="background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:.9rem 1rem;text-align:center;">
+      <div style="font-family:var(--font-d);font-size:1.3rem;font-weight:900;color:var(--accent)">${c.v || '—'}</div>
+      <div style="font-size:.62rem;color:var(--text3);text-transform:uppercase;letter-spacing:.08em;margin-top:.2rem">${c.l}</div>
+    </div>`).join('');
+
+  allResults = results;
+  renderTable('all');
+  renderChart('21K');
+}
+
+function renderTable(dist) {
+  const rows = dist === 'all' ? allResults : allResults.filter(r => r.distance === dist);
+  const tbody = document.getElementById('pResults');
+  const empty = document.getElementById('pEmpty');
+
+  // Highlight active filter
+  ['All','21K','10K','5K'].forEach(d => {
+    const el = document.getElementById('f' + d);
+    if (el) el.classList.toggle('mg', (d.toLowerCase() === dist || (d === 'All' && dist === 'all')));
+  });
+
+  if (!rows.length) {
+    tbody.innerHTML = '';
+    empty.style.display = 'block';
+    return;
+  }
+  empty.style.display = 'none';
+  tbody.innerHTML = rows.map(r => `
+    <tr>
+      <td class="tdy">${r.year}</td>
+      <td><span class="tdd">${r.distance}</span></td>
+      <td style="font-size:.82rem;color:var(--text2)">${r.category || '—'}</td>
+      <td class="tdt">${r.time_raw}</td>
+      <td style="font-family:var(--font-d)">${r.position_general ? '#' + r.position_general : '—'}</td>
+      <td style="font-family:var(--font-d);color:var(--text2)">${r.position_category ? '#' + r.position_category : '—'}</td>
+    </tr>`).join('');
+}
+
+function filterDist(d) {
+  renderTable(d);
+  if (d !== 'all') renderChart(d);
+}
+
+function renderChart(dist) {
+  const rows = allResults.filter(r => r.distance === dist && r.time_seconds).sort((a,b) => a.year - b.year);
+  const section = document.getElementById('chartSection');
+  if (rows.length < 2) { section.style.display = 'none'; return; }
+  section.style.display = 'block';
+  document.getElementById('chartDist').textContent = dist;
+
+  const labels = rows.map(r => r.year);
+  const values = rows.map(r => r.time_seconds / 60); // en minutos para el gráfico
+
+  if (evolChartInst) evolChartInst.destroy();
+  evolChartInst = new Chart(document.getElementById('evolChart'), {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [{
+        label: dist,
+        data: values,
+        borderColor: '#78C02C',
+        backgroundColor: 'rgba(120,192,44,.08)',
+        borderWidth: 2.5,
+        pointBackgroundColor: '#78C02C',
+        pointBorderColor: '#1C1C1C',
+        pointBorderWidth: 2,
+        pointRadius: 5,
+        fill: true,
+        tension: .35,
+        spanGaps: true,
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: '#242424', borderColor: '#333', borderWidth: 1,
+          callbacks: {
+            label: c => {
+              const total = Math.round(c.raw * 60);
+              const h = Math.floor(total/3600), m = Math.floor((total%3600)/60), s = total%60;
+              return ` ${h}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+            }
+          }
+        }
+      },
+      scales: {
+        x: { grid: { color: 'rgba(51,51,51,.6)' }, ticks: { color: '#5A5A5A', font: { family: 'Barlow Condensed', weight: '700' } } },
+        y: {
+          reverse: true,
+          grid: { color: 'rgba(51,51,51,.6)' },
+          ticks: {
+            color: '#5A5A5A',
+            font: { family: 'Barlow Condensed', weight: '700' },
+            callback: v => { const t=Math.round(v*60); const h=Math.floor(t/3600),m=Math.floor((t%3600)/60),s=t%60; return `${h}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`; }
+          }
+        }
+      }
+    }
+  });
+}
+
+loadProfile();
+</script>
+</body>
+</html>

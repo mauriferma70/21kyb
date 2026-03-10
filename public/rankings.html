@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Rankings — 21K Yerba Buena</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@300;400;600;700;900&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/assets/style.css">
+</head>
+<body>
+
+<nav class="nav">
+  <a href="/" class="nav-logo">
+    <div class="logo-box"><span class="logo-n">21</span><span class="logo-k">k</span></div>
+    <span class="logo-s">Yerba Buena</span>
+  </a>
+  <div class="nav-tabs">
+    <a href="/"         class="ntab">Inicio</a>
+    <a href="/buscar"   class="ntab">Buscar</a>
+    <a href="/rankings" class="ntab active">Rankings</a>
+    <a href="/admin"    class="ntab">Admin</a>
+  </div>
+</nav>
+
+<div class="page-hdr">
+  <h1>Rankings</h1>
+  <p>Mejores tiempos históricos, corredores más fieles y mayor progresión.</p>
+</div>
+
+<div class="section" style="padding-top:0;">
+
+  <!-- Tabs -->
+  <div style="display:flex;gap:.4rem;margin-bottom:1.8rem;flex-wrap:wrap;">
+    <button class="bxs mg" id="tab-hist"  onclick="showTab('hist')">🏆 Mejores tiempos</button>
+    <button class="bxs df" id="tab-loyal" onclick="showTab('loyal')">❤️ Más fieles</button>
+    <button class="bxs df" id="tab-prog"  onclick="showTab('prog')">📈 Mayor progresión</button>
+  </div>
+
+  <!-- Filtros -->
+  <div id="distFilter" style="display:flex;gap:.4rem;margin-bottom:1.2rem;">
+    <span style="font-size:.75rem;color:var(--text3);align-self:center;margin-right:.2rem;">Distancia:</span>
+    <button class="bxs mg" id="d21K" onclick="setDist('21K')">21K</button>
+    <button class="bxs df" id="d10K" onclick="setDist('10K')">10K</button>
+    <button class="bxs df" id="d5K"  onclick="setDist('5K')">5K</button>
+  </div>
+
+  <div id="rankLoading" style="color:var(--text3);font-size:.88rem;padding:1rem 0;">Cargando...</div>
+  <div id="rankEmpty"   style="display:none;color:var(--text3);font-size:.88rem;padding:1rem 0;">Aún no hay datos cargados para este ranking.</div>
+
+  <!-- Podio top 3 -->
+  <div id="podium" style="display:none;margin-bottom:1.5rem;">
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:.8rem;" id="podiumCards"></div>
+  </div>
+
+  <!-- Tabla completa -->
+  <div id="rankTable" style="display:none;">
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr id="rankHead"></tr></thead>
+        <tbody id="rankBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+
+<footer>
+  <strong>21K Yerba Buena</strong> · Estadísticas históricas · Tucumán, Argentina
+</footer>
+
+<script src="/assets/api.js"></script>
+<script>
+let currentTab  = 'hist';
+let currentDist = '21K';
+
+async function loadRanking() {
+  document.getElementById('rankLoading').style.display = 'block';
+  document.getElementById('rankEmpty').style.display   = 'none';
+  document.getElementById('podium').style.display      = 'none';
+  document.getElementById('rankTable').style.display   = 'none';
+
+  try {
+    let data;
+    if (currentTab === 'hist')  data = await API.rankings('historical', `?distance=${currentDist}&limit=50`);
+    if (currentTab === 'loyal') data = await API.rankings('loyal', '?limit=50');
+    if (currentTab === 'prog')  data = await API.rankings('progression', `?distance=${currentDist}&limit=50`);
+
+    document.getElementById('rankLoading').style.display = 'none';
+
+    const rows = data.ranking || [];
+    if (!rows.length) { document.getElementById('rankEmpty').style.display = 'block'; return; }
+
+    renderPodium(rows.slice(0, 3));
+    renderTable(rows, currentTab);
+
+  } catch(e) {
+    document.getElementById('rankLoading').textContent = 'Error al cargar el ranking.';
+  }
+}
+
+function renderPodium(top) {
+  const medals = ['🥇','🥈','🥉'];
+  const colors = ['var(--yellow)','#C0C0C0','#CD7F32'];
+  document.getElementById('podiumCards').innerHTML = top.map((r, i) => `
+    <div class="card" onclick="location.href='/corredor/${r.runner_id}'" style="border-color:${i===0?'var(--yellow)':'var(--border)'};">
+      <div class="card-r">${medals[i]} ${i+1}° lugar</div>
+      <div class="card-run">
+        <div class="av" style="color:${colors[i]};border-color:${colors[i]};background:rgba(120,192,44,.08)">${r.name[0]}${r.surname[0]}</div>
+        <div>
+          <div class="card-nm">${r.name} ${r.surname}</div>
+          <div class="card-id">${r.runner_id}</div>
+        </div>
+      </div>
+      <div class="card-m">
+        ${currentTab === 'hist'  ? `<div class="cm"><div class="v">${r.time_raw}</div><div class="k">Tiempo</div></div><div class="cm"><div class="v">${r.year}</div><div class="k">Año</div></div>` : ''}
+        ${currentTab === 'loyal' ? `<div class="cm"><div class="v">${r.total_races}</div><div class="k">Ediciones</div></div><div class="cm"><div class="v">${r.first_year}–${r.last_year}</div><div class="k">Período</div></div>` : ''}
+        ${currentTab === 'prog'  ? `<div class="cm"><div class="v">${r.best_time_raw}</div><div class="k">Mejor</div></div><div class="cm"><div class="v">${r.total_races}</div><div class="k">Carreras</div></div>` : ''}
+      </div>
+    </div>`).join('');
+  document.getElementById('podium').style.display = 'block';
+}
+
+function renderTable(rows, tab) {
+  const heads = {
+    hist:  '<th>#</th><th>Runner ID</th><th>Nombre</th><th>Sexo</th><th>Provincia</th><th>Tiempo</th><th>Año</th><th>Categoría</th>',
+    loyal: '<th>#</th><th>Runner ID</th><th>Nombre</th><th>Sexo</th><th>Provincia</th><th>Ediciones</th><th>Período</th><th>Mejor tiempo</th>',
+    prog:  '<th>#</th><th>Runner ID</th><th>Nombre</th><th>Sexo</th><th>Provincia</th><th>Ediciones</th><th>Primer tiempo</th><th>Mejor tiempo</th>',
+  };
+  document.getElementById('rankHead').innerHTML = heads[tab];
+  document.getElementById('rankBody').innerHTML = rows.map((r, i) => {
+    if (tab === 'hist')  return `<tr onclick="location.href='/corredor/${r.runner_id}'" style="cursor:pointer;"><td style="font-family:var(--font-d);font-weight:700;color:var(--text3)">${i+1}</td><td class="rid">${r.runner_id}</td><td>${r.name} ${r.surname}</td><td>${r.gender}</td><td style="font-size:.82rem;color:var(--text2)">${r.province||'—'}</td><td class="tdt">${r.time_raw}</td><td class="tdy">${r.year}</td><td style="font-size:.82rem;color:var(--text2)">${r.category||'—'}</td></tr>`;
+    if (tab === 'loyal') return `<tr onclick="location.href='/corredor/${r.runner_id}'" style="cursor:pointer;"><td style="font-family:var(--font-d);font-weight:700;color:var(--text3)">${i+1}</td><td class="rid">${r.runner_id}</td><td>${r.name} ${r.surname}</td><td>${r.gender}</td><td style="font-size:.82rem;color:var(--text2)">${r.province||'—'}</td><td style="font-family:var(--font-d);color:var(--accent);font-weight:700">${r.total_races}</td><td style="font-size:.82rem;color:var(--text2)">${r.first_year}–${r.last_year}</td><td class="tdt">${r.best_time_raw||'—'}</td></tr>`;
+    if (tab === 'prog')  return `<tr onclick="location.href='/corredor/${r.runner_id}'" style="cursor:pointer;"><td style="font-family:var(--font-d);font-weight:700;color:var(--text3)">${i+1}</td><td class="rid">${r.runner_id}</td><td>${r.name} ${r.surname}</td><td>${r.gender}</td><td style="font-size:.82rem;color:var(--text2)">${r.province||'—'}</td><td style="font-family:var(--font-d);color:var(--text2)">${r.total_races}</td><td class="tdt" style="color:var(--text2)">${r.first_time_raw||'—'}</td><td class="tdt">${r.best_time_raw||'—'}</td></tr>`;
+  }).join('');
+  document.getElementById('rankTable').style.display = 'block';
+}
+
+function showTab(tab) {
+  currentTab = tab;
+  ['hist','loyal','prog'].forEach(t => {
+    const btn = document.getElementById('tab-' + t);
+    btn.className = t === tab ? 'bxs mg' : 'bxs df';
+  });
+  document.getElementById('distFilter').style.display = tab === 'loyal' ? 'none' : 'flex';
+  loadRanking();
+}
+
+function setDist(d) {
+  currentDist = d;
+  ['21K','10K','5K'].forEach(x => {
+    document.getElementById('d' + x).className = x === d ? 'bxs mg' : 'bxs df';
+  });
+  loadRanking();
+}
+
+loadRanking();
+</script>
+</body>
+</html>

@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Buscar corredor — 21K Yerba Buena</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@300;400;600;700;900&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/assets/style.css">
+</head>
+<body>
+
+<nav class="nav">
+  <a href="/" class="nav-logo">
+    <div class="logo-box"><span class="logo-n">21</span><span class="logo-k">k</span></div>
+    <span class="logo-s">Yerba Buena</span>
+  </a>
+  <div class="nav-tabs">
+    <a href="/"         class="ntab">Inicio</a>
+    <a href="/buscar"   class="ntab active">Buscar</a>
+    <a href="/rankings" class="ntab">Rankings</a>
+    <a href="/admin"    class="ntab">Admin</a>
+  </div>
+</nav>
+
+<div class="page-hdr">
+  <h1>Buscar corredor</h1>
+  <p>Ingresá el nombre o apellido para encontrar el perfil de un corredor.</p>
+</div>
+
+<div class="section" style="padding-top:0">
+  <div class="search-box" style="max-width:560px;margin-bottom:1.5rem;">
+    <input class="s-input" type="text" id="searchIn" placeholder="Nombre, apellido o Runner ID..." autofocus>
+    <button class="btn-g" onclick="doSearch()">Buscar →</button>
+  </div>
+
+  <div id="status" style="font-size:.85rem;color:var(--text3);min-height:1.5rem;margin-bottom:1rem;"></div>
+
+  <div id="results" class="tbl-wrap" style="display:none;">
+    <table>
+      <thead>
+        <tr>
+          <th>Runner ID</th>
+          <th>Nombre</th>
+          <th>Apellido</th>
+          <th>Sexo</th>
+          <th>Provincia</th>
+          <th>Participaciones</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody id="tbody"></tbody>
+    </table>
+  </div>
+
+  <div id="empty" style="display:none;padding:2rem 0;color:var(--text3);font-size:.9rem;"></div>
+</div>
+
+<footer>
+  <strong>21K Yerba Buena</strong> · Estadísticas históricas · Tucumán, Argentina<br>
+  <em>El DNI nunca es visible públicamente.</em>
+</footer>
+
+<script src="/assets/api.js"></script>
+<script>
+const searchIn = document.getElementById('searchIn');
+
+async function doSearch() {
+  const q = searchIn.value.trim();
+  if (q.length < 2) {
+    setStatus('Ingresá al menos 2 caracteres.', false);
+    return;
+  }
+
+  // Si empieza con RB, ir directo al perfil
+  if (/^RB\d+/i.test(q)) {
+    location.href = `/corredor/${q.toUpperCase()}`;
+    return;
+  }
+
+  setStatus('Buscando...', false);
+  document.getElementById('results').style.display = 'none';
+  document.getElementById('empty').style.display = 'none';
+
+  try {
+    const data = await API.searchRunner(q);
+    const rows = data.results || [];
+    if (rows.length === 0) {
+      setStatus('', false);
+      document.getElementById('empty').style.display = 'block';
+      document.getElementById('empty').textContent = `Sin resultados para "${q}".`;
+      return;
+    }
+    setStatus(`${rows.length} resultado${rows.length > 1 ? 's' : ''} encontrado${rows.length > 1 ? 's' : ''}.`, true);
+    document.getElementById('tbody').innerHTML = rows.map(r => `
+      <tr onclick="location.href='/corredor/${r.runner_id}'" style="cursor:pointer;">
+        <td class="rid">${r.runner_id}</td>
+        <td>${r.name}</td>
+        <td>${r.surname}</td>
+        <td>${r.gender === 'M' ? 'M' : 'F'}</td>
+        <td style="font-size:.82rem;color:var(--text2)">${r.province || '—'}</td>
+        <td style="font-family:var(--font-d);color:var(--accent)">${r.total_races}</td>
+        <td><button class="bxs mg" onclick="event.stopPropagation();location.href='/corredor/${r.runner_id}'">Ver perfil →</button></td>
+      </tr>`).join('');
+    document.getElementById('results').style.display = 'block';
+  } catch(e) {
+    setStatus('Error al buscar. Intentá de nuevo.', false);
+  }
+}
+
+function setStatus(msg, ok) {
+  const el = document.getElementById('status');
+  el.textContent = msg;
+  el.style.color = ok ? 'var(--accent)' : 'var(--text3)';
+}
+
+searchIn.addEventListener('keydown', e => { if (e.key === 'Enter') doSearch(); });
+
+// Si viene con ?q= en la URL, buscar automáticamente
+const params = new URLSearchParams(location.search);
+if (params.get('q')) { searchIn.value = params.get('q'); doSearch(); }
+</script>
+</body>
+</html>

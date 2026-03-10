@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>21K Yerba Buena — Estadísticas Históricas</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@300;400;600;700;900&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/assets/style.css">
+</head>
+<body>
+
+<nav class="nav">
+  <a href="/" class="nav-logo">
+    <div class="logo-box"><span class="logo-n">21</span><span class="logo-k">k</span></div>
+    <span class="logo-s">Yerba Buena</span>
+  </a>
+  <div class="nav-tabs">
+    <a href="/"            class="ntab active">Inicio</a>
+    <a href="/buscar"      class="ntab">Buscar</a>
+    <a href="/rankings"    class="ntab">Rankings</a>
+    <a href="/admin"       class="ntab">Admin</a>
+  </div>
+</nav>
+
+<div class="hero">
+  <div class="hero-glow"></div>
+  <div class="hero-grid"></div>
+  <div class="hero-inner">
+    <div class="eyebrow">Tucumán · Argentina · Estadísticas históricas</div>
+    <h1 class="hero-title">21<span class="green">K</span><br><span class="ghost">YERBA</span><br>BUENA</h1>
+    <p class="hero-sub">Tu historial completo de participaciones. Consultá tus tiempos, posiciones y evolución en todas las ediciones del evento.</p>
+    <div class="search-box">
+      <input class="s-input" type="text" id="heroIn" placeholder="Buscá tu nombre o apellido...">
+      <button class="btn-g" onclick="heroSearch()">Buscar →</button>
+    </div>
+    <div id="hres" style="display:none">
+      <div class="inline-res" id="hlist"></div>
+    </div>
+    <div class="hero-stats" id="heroStats">
+      <div class="hs"><div class="n" id="statRunners">—</div><div class="l">Corredores</div></div>
+      <div class="hs"><div class="n" id="statEditions">—</div><div class="l">Ediciones</div></div>
+      <div class="hs"><div class="n" id="statResults">—</div><div class="l">Resultados</div></div>
+      <div class="hs"><div class="n">3</div><div class="l">Distancias</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- Top histórico -->
+<div class="section">
+  <div class="sec-h">
+    <div><div class="sec-t">Top Histórico</div><div class="sec-s">Mejores tiempos en 21K</div></div>
+    <a href="/rankings" class="more">Ver ranking completo →</a>
+  </div>
+  <div class="cards" id="topCards">
+    <div class="card-skeleton"></div>
+    <div class="card-skeleton"></div>
+    <div class="card-skeleton"></div>
+  </div>
+</div>
+
+<footer>
+  <strong>21K Yerba Buena</strong> · Estadísticas históricas · Tucumán, Argentina<br>
+  <em>El DNI nunca es visible públicamente.</em>
+</footer>
+
+<script src="/assets/api.js"></script>
+<script>
+function norm(s){ return s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim(); }
+
+async function loadStats() {
+  try {
+    // Obtener stats del dashboard (sin autenticación para conteos públicos)
+    const res = await fetch('/api/rankings/historical?distance=21K&limit=3');
+    const data = await res.json();
+    renderTopCards(data.ranking || []);
+  } catch(e) {}
+  // Stats generales via rankings loyal (cuenta corredores)
+  try {
+    const loyal = await API.get('/rankings/loyal?limit=1');
+    // Stats se obtienen del dashboard admin — acá mostramos lo que podemos
+  } catch(e) {}
+}
+
+function renderTopCards(ranking) {
+  const medals = ['🥇','🥈','🥉'];
+  const container = document.getElementById('topCards');
+  if (!ranking.length) {
+    container.innerHTML = '<p style="color:var(--text3);font-size:.9rem">Aún no hay resultados cargados.</p>';
+    return;
+  }
+  container.innerHTML = ranking.slice(0,3).map((r, i) => `
+    <div class="card" onclick="location.href='/corredor/${r.runner_id}'">
+      <div class="card-r">${medals[i]} ${i+1}° Histórico — ${r.distance}</div>
+      <div class="card-run">
+        <div class="av">${r.name[0]}${r.surname[0]}</div>
+        <div><div class="card-nm">${r.name} ${r.surname}</div><div class="card-id">${r.runner_id}</div></div>
+      </div>
+      <div class="card-m">
+        <div class="cm"><div class="v">${r.time_raw}</div><div class="k">Tiempo</div></div>
+        <div class="cm"><div class="v">${r.year}</div><div class="k">Edición</div></div>
+        <div class="cm"><div class="v">${r.position_general ? '#'+r.position_general : '—'}</div><div class="k">Posición</div></div>
+      </div>
+    </div>`).join('');
+}
+
+async function heroSearch() {
+  const q = document.getElementById('heroIn').value.trim();
+  if (!q) return;
+  const box = document.getElementById('hres');
+  const list = document.getElementById('hlist');
+  box.style.display = 'block';
+  list.innerHTML = '<div class="no-r">Buscando...</div>';
+  try {
+    const data = await API.searchRunner(q);
+    const results = data.results || [];
+    list.innerHTML = results.length === 0
+      ? `<div class="no-r">Sin resultados para "${q}"</div>`
+      : results.slice(0,6).map(r => `
+          <div class="ir-item" onclick="location.href='/corredor/${r.runner_id}'">
+            <div>
+              <div class="ir-name">${r.name} ${r.surname}</div>
+              <div class="ir-meta">${r.total_races} participaci${r.total_races==1?'ón':'ones'} · ${r.gender==='M'?'Masculino':'Femenino'}</div>
+            </div>
+            <span class="rid">${r.runner_id}</span>
+          </div>`).join('');
+  } catch(e) {
+    list.innerHTML = '<div class="no-r">Error al buscar. Intentá de nuevo.</div>';
+  }
+}
+
+document.getElementById('heroIn').addEventListener('keydown', e => { if(e.key==='Enter') heroSearch(); });
+document.getElementById('heroIn').addEventListener('input', () => {
+  if(!document.getElementById('heroIn').value.trim()) document.getElementById('hres').style.display='none';
+});
+
+loadStats();
+</script>
+</body>
+</html>

@@ -1,0 +1,676 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin — 21K Yerba Buena</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@300;400;600;700;900&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/assets/style.css">
+<style>
+  .aw  { display:flex; padding-top:56px; min-height:100vh; }
+  .aside { width:220px; flex-shrink:0; background:var(--bg2); border-right:1px solid var(--border); padding:1rem 0; position:sticky; top:56px; height:calc(100vh - 56px); overflow-y:auto; }
+  .aside-s { margin-bottom:1.2rem; }
+  .aside-l { font-size:.62rem; font-weight:700; letter-spacing:.14em; text-transform:uppercase; color:var(--text3); padding:.4rem 1.2rem; }
+  .ai { display:flex; align-items:center; gap:.6rem; padding:.55rem 1.2rem; font-size:.83rem; font-weight:500; cursor:pointer; color:var(--text2); transition:all .14s; border-left:2px solid transparent; }
+  .ai:hover { color:var(--text); background:rgba(255,255,255,.04); }
+  .ai.active { color:var(--accent); background:rgba(120,192,44,.08); border-left-color:var(--accent); }
+  .ai-ico { font-size:.95rem; }
+  .ai-badge { background:var(--yellow); color:#111; font-size:.6rem; font-weight:700; padding:.1rem .4rem; border-radius:10px; margin-left:auto; }
+  .am { flex:1; padding:2rem; max-width:900px; overflow-x:auto; }
+  .a-sec { display:none; }
+  .a-sec.active { display:block; animation:fadeUp .22s ease; }
+  @keyframes fadeUp { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
+  .at  { font-family:var(--font-d); font-size:2rem; font-weight:900; text-transform:uppercase; letter-spacing:.03em; margin-bottom:.3rem; }
+  .as2 { font-size:.82rem; color:var(--text3); margin-bottom:1.5rem; }
+  .akpis { display:grid; grid-template-columns:repeat(4,1fr); gap:.8rem; margin-bottom:1.5rem; }
+  .akpi  { background:var(--bg2); border:1px solid var(--border); border-radius:10px; padding:1rem; text-align:center; }
+  .av2   { font-family:var(--font-d); font-size:2rem; font-weight:900; }
+  .al    { font-size:.65rem; color:var(--text3); text-transform:uppercase; letter-spacing:.1em; margin-top:.2rem; }
+  /* Login */
+  .login-w { display:flex; align-items:center; justify-content:center; min-height:calc(100vh - 56px); }
+  .login-box { background:var(--bg2); border:1px solid var(--border); border-radius:14px; padding:2.5rem; width:100%; max-width:360px; }
+  .lc-t  { font-family:var(--font-d); font-size:1.8rem; font-weight:900; margin-bottom:.3rem; }
+  .lc-s  { font-size:.82rem; color:var(--text3); margin-bottom:1.8rem; }
+  .lc-hint { font-size:.72rem; color:var(--text3); text-align:center; margin-top:1rem; }
+  /* Import dropzone */
+  .upz  { border:2px dashed var(--border2); border-radius:10px; padding:2.5rem; text-align:center; cursor:pointer; transition:all .18s; margin-bottom:1rem; }
+  .upz:hover,.upz.drag { border-color:var(--accent); background:rgba(120,192,44,.04); }
+  .upz-t { font-family:var(--font-d); font-size:1.1rem; font-weight:700; margin-bottom:.3rem; }
+  .upz-s { font-size:.78rem; color:var(--text3); }
+  /* Log */
+  .imp-log { background:var(--bg); border:1px solid var(--border); border-radius:8px; padding:1rem; max-height:240px; overflow-y:auto; font-family:monospace; font-size:.75rem; }
+  .log-ok  { color:var(--accent); }
+  .log-warn{ color:var(--yellow); }
+  .log-err { color:var(--red); }
+  /* Pagination */
+  .rsb2 { margin-bottom:1rem; }
+  .rs2  { width:100%; max-width:360px; background:var(--bg3); border:1px solid var(--border2); border-radius:8px; padding:.6rem .9rem; color:var(--text); font-family:var(--font-b); font-size:.85rem; outline:none; }
+  .rs2:focus { border-color:var(--accent); }
+  @media(max-width:680px){ .aw{flex-direction:column;} .aside{width:100%;height:auto;position:static;display:flex;flex-wrap:wrap;gap:.2rem;padding:.5rem;} .aside-l{display:none;} .ai{border-left:none;border-bottom:2px solid transparent;} .ai.active{border-bottom-color:var(--accent);} .akpis{grid-template-columns:repeat(2,1fr);} }
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <a href="/" class="nav-logo">
+    <div class="logo-box"><span class="logo-n">21</span><span class="logo-k">k</span></div>
+    <span class="logo-s">Yerba Buena</span>
+  </a>
+  <div class="nav-tabs">
+    <a href="/"         class="ntab">Inicio</a>
+    <a href="/buscar"   class="ntab">Buscar</a>
+    <a href="/rankings" class="ntab">Rankings</a>
+    <span class="ntab active">Admin</span>
+  </div>
+</nav>
+
+<!-- LOGIN -->
+<div id="loginWrap" class="login-w" style="display:none;">
+  <div class="login-box">
+    <div class="lc-t">Panel Admin</div>
+    <div class="lc-s">21K Yerba Buena · Acceso restringido</div>
+    <div class="ff" style="margin-bottom:.9rem;">
+      <label class="fl">Usuario</label>
+      <input class="fi" type="text" id="lu" placeholder="admin">
+    </div>
+    <div class="ff" style="margin-bottom:1.2rem;">
+      <label class="fl">Contraseña</label>
+      <input class="fi" type="password" id="lp" placeholder="••••••" onkeydown="if(event.key==='Enter')doLogin()">
+    </div>
+    <button class="btn-g" style="width:100%" onclick="doLogin()">Ingresar →</button>
+    <div id="lerr" style="color:var(--red);font-size:.8rem;text-align:center;margin-top:.8rem;min-height:1.2rem;"></div>
+  </div>
+</div>
+
+<!-- PANEL -->
+<div id="adminPanel" style="display:none;">
+<div class="aw">
+  <div class="aside">
+    <div class="aside-s">
+      <div class="aside-l">Principal</div>
+      <div class="ai active" onclick="nav(this,'s-dash')"><span class="ai-ico">📊</span> Dashboard</div>
+      <div class="ai" onclick="nav(this,'s-imp')"><span class="ai-ico">📁</span> Importar Excel</div>
+      <div class="ai" onclick="nav(this,'s-dup')"><span class="ai-ico">⚠️</span> Duplicados <span class="ai-badge" id="dbadge" style="display:none">0</span></div>
+    </div>
+    <div class="aside-s">
+      <div class="aside-l">Datos</div>
+      <div class="ai" onclick="nav(this,'s-run')"><span class="ai-ico">🏃</span> Corredores</div>
+      <div class="ai" onclick="nav(this,'s-add')"><span class="ai-ico">➕</span> Agregar corredor</div>
+      <div class="ai" onclick="nav(this,'s-res')"><span class="ai-ico">🏁</span> Resultados</div>
+      <div class="ai" onclick="nav(this,'s-edi')"><span class="ai-ico">📅</span> Ediciones</div>
+    </div>
+    <div class="aside-s">
+      <div class="aside-l">Sistema</div>
+      <div class="ai" onclick="nav(this,'s-cfg')"><span class="ai-ico">⚙️</span> Configuración</div>
+      <div class="ai" onclick="doLogout()"><span class="ai-ico">🔒</span> Cerrar sesión</div>
+    </div>
+  </div>
+
+  <div class="am">
+
+    <!-- DASHBOARD -->
+    <div id="s-dash" class="a-sec active">
+      <div class="at">Dashboard</div>
+      <div class="as2" id="dashDate">Cargando...</div>
+      <div class="akpis">
+        <div class="akpi"><div class="av2" id="kRunners" style="color:var(--accent)">—</div><div class="al">Corredores</div></div>
+        <div class="akpi"><div class="av2" id="kResults" style="color:var(--yellow)">—</div><div class="al">Resultados</div></div>
+        <div class="akpi"><div class="av2" id="kEditions" style="color:var(--accent)">—</div><div class="al">Ediciones</div></div>
+        <div class="akpi"><div class="av2" id="kDupes" style="color:var(--red)">—</div><div class="al">Duplicados</div></div>
+      </div>
+      <div class="panel" style="cursor:default">
+        <div class="panel-h"><div class="panel-t">Últimas ediciones</div></div>
+        <div id="edTable"><table><thead><tr><th>Año</th><th>Distancias</th><th>Resultados</th><th>Cargado</th></tr></thead><tbody id="edBody"></tbody></table></div>
+        <div id="edEmpty" style="display:none;padding:1.5rem;text-align:center;color:var(--text3);font-size:.85rem;">Aún no hay ediciones cargadas.</div>
+      </div>
+    </div>
+
+    <!-- IMPORTAR -->
+    <div id="s-imp" class="a-sec">
+      <div class="at">Importar Excel</div>
+      <div class="as2">Cargá los resultados de una edición desde un archivo .xlsx o .xls.</div>
+      <div class="panel" style="cursor:default">
+        <div class="panel-h"><div class="panel-t">Nueva importación</div></div>
+        <div style="padding:1.4rem">
+          <div class="fr">
+            <div class="ff"><label class="fl">Año *</label><input class="fi" type="number" id="iy" placeholder="2025" min="2010" max="2030"></div>
+            <div class="ff"><label class="fl">Distancia *</label>
+              <select class="fsel" id="id2"><option>21K</option><option>10K</option><option>5K</option></select>
+            </div>
+          </div>
+          <div class="upz" id="upz" onclick="document.getElementById('fileIn').click()">
+            <div class="upz-t">📎 Arrastrá o hacé clic para seleccionar el archivo</div>
+            <div class="upz-s" id="sf">Formatos aceptados: .xlsx, .xls — máx. 10MB</div>
+            <input type="file" id="fileIn" accept=".xlsx,.xls" style="display:none" onchange="onFile(this)">
+          </div>
+          <div style="margin-bottom:1rem;font-size:.78rem;color:var(--text3);">
+            Columnas esperadas: <code style="background:var(--bg3);padding:.1rem .4rem;border-radius:4px;">Nombre, Apellido, DNI, Tiempo, Posicion, Categoria, Sexo</code>
+          </div>
+          <button class="btn-g" onclick="doImport()">Importar →</button>
+          <div id="impLog" style="display:none;margin-top:1.2rem;">
+            <div style="font-size:.75rem;color:var(--text3);margin-bottom:.4rem;font-family:var(--font-d);letter-spacing:.1em;text-transform:uppercase;">Log de importación</div>
+            <div class="imp-log" id="logBox"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- DUPLICADOS -->
+    <div id="s-dup" class="a-sec">
+      <div class="at">Duplicados</div>
+      <div class="as2">Corredores que el sistema detectó como posibles duplicados.</div>
+      <div id="dupContent"></div>
+    </div>
+
+    <!-- CORREDORES -->
+    <div id="s-run" class="a-sec">
+      <div class="at">Corredores</div>
+      <div class="as2">Base de datos completa de corredores.</div>
+      <div class="rsb2"><input class="rs2" type="text" id="runQ" placeholder="Buscar por nombre, apellido, DNI o ID..." oninput="loadRunners()"></div>
+      <div id="runContent"></div>
+    </div>
+
+    <!-- AGREGAR CORREDOR -->
+    <div id="s-add" class="a-sec">
+      <div class="at">Agregar corredor</div>
+      <div class="as2">Registrá un nuevo corredor con su primer resultado.</div>
+
+      <div id="add-dup-warn" style="display:none;background:rgba(240,188,48,.07);border:1px solid rgba(240,188,48,.28);border-radius:10px;padding:1rem 1.2rem;margin-bottom:1.2rem;">
+        <div style="font-size:.78rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--yellow);margin-bottom:.6rem;">⚠️ Posible corredor existente</div>
+        <div id="add-dup-msg" style="font-size:.85rem;margin-bottom:.8rem;"></div>
+        <div style="display:flex;gap:.6rem;">
+          <button class="bxs mg" onclick="doAddForce()">Son distintos — registrar igual</button>
+          <button class="bxs df" onclick="document.getElementById('add-dup-warn').style.display='none'">Cancelar</button>
+        </div>
+      </div>
+
+      <div class="panel" style="cursor:default;margin-bottom:1.1rem;">
+        <div class="panel-h"><div class="panel-t">① Datos personales</div><div class="panel-c">* obligatorio</div></div>
+        <div style="padding:1.3rem;">
+          <div class="fr">
+            <div class="ff"><label class="fl">Nombre *</label><input class="fi" id="an" placeholder="Ej: Juan Carlos"></div>
+            <div class="ff"><label class="fl">Apellido *</label><input class="fi" id="as" placeholder="Ej: Pérez"></div>
+          </div>
+          <div class="fr">
+            <div class="ff"><label class="fl">DNI <span style="color:var(--text3);font-weight:400;text-transform:none;letter-spacing:0">(solo interno)</span></label><input class="fi" id="ad" placeholder="28456789" maxlength="10"></div>
+            <div class="ff"><label class="fl">Sexo *</label>
+              <select class="fsel" id="ag"><option value="">Seleccionar...</option><option value="M">Masculino</option><option value="F">Femenino</option></select>
+            </div>
+          </div>
+          <div class="fr">
+            <div class="ff"><label class="fl">Provincia *</label>
+              <select class="fsel" id="aprov">
+                <option value="">Seleccionar...</option>
+                <option selected>Tucumán</option>
+                <option>Buenos Aires</option><option>Córdoba</option><option>Santa Fe</option><option>Mendoza</option>
+                <option>Salta</option><option>Jujuy</option><option>Santiago del Estero</option><option>Catamarca</option>
+                <option>La Rioja</option><option>San Juan</option><option>San Luis</option><option>Chaco</option>
+                <option>Formosa</option><option>Misiones</option><option>Corrientes</option><option>Entre Ríos</option>
+                <option>La Pampa</option><option>Neuquén</option><option>Río Negro</option><option>Chubut</option>
+                <option>Santa Cruz</option><option>Tierra del Fuego</option><option>Otra / Extranjero</option>
+              </select>
+            </div>
+            <div class="ff"><label class="fl">Fecha de nacimiento</label><input class="fi" type="date" id="adob"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel" style="cursor:default;margin-bottom:1.1rem;">
+        <div class="panel-h"><div class="panel-t">② Resultado de carrera</div><div class="panel-c">Año · Distancia · Categoría · Tiempo</div></div>
+        <div style="padding:1.3rem;">
+          <div class="fr">
+            <div class="ff"><label class="fl">Año *</label>
+              <select class="fsel" id="ayr"><option value="">Seleccionar...</option>
+                <option>2025</option><option>2024</option><option>2023</option><option>2022</option>
+                <option>2021</option><option>2019</option><option>2018</option><option>2017</option>
+              </select>
+            </div>
+            <div class="ff"><label class="fl">Distancia *</label>
+              <select class="fsel" id="adist" onchange="syncCat()">
+                <option value="">Seleccionar...</option><option>21K</option><option>10K</option><option>5K</option>
+              </select>
+            </div>
+          </div>
+          <div class="fr">
+            <div class="ff"><label class="fl">Categoría *</label>
+              <select class="fsel" id="acat">
+                <option value="">Seleccionar...</option>
+                <optgroup label="Masculino"><option>M18</option><option>M23</option><option>M35</option><option>M40</option><option>M45</option><option>M50</option><option>M55</option><option>M60+</option></optgroup>
+                <optgroup label="Femenino"><option>F18</option><option>F23</option><option>F35</option><option>F40</option><option>F45</option><option>F50</option><option>F55</option><option>F60+</option></optgroup>
+                <option value="General">General</option>
+              </select>
+            </div>
+            <div class="ff"><label class="fl">Tiempo oficial * <span style="color:var(--text3);font-weight:400;text-transform:none;letter-spacing:0">(H:MM:SS)</span></label>
+              <input class="fi" id="atm" placeholder="1:34:22" maxlength="8" oninput="fmtTime(this)">
+            </div>
+          </div>
+          <div class="fr">
+            <div class="ff"><label class="fl">Posición general</label><input class="fi" type="number" id="apos" placeholder="Ej: 47" min="1"></div>
+            <div class="ff"><label class="fl">Posición en categoría</label><input class="fi" type="number" id="aposc" placeholder="Ej: 5" min="1"></div>
+          </div>
+        </div>
+      </div>
+
+      <div style="display:flex;gap:.8rem;justify-content:flex-end;margin-bottom:2rem;">
+        <button class="bxs df" onclick="clearAdd()">Limpiar</button>
+        <button class="btn-g" onclick="doAdd()">Registrar corredor y resultado →</button>
+      </div>
+
+      <div id="addRecent" style="display:none;">
+        <div class="panel" style="cursor:default">
+          <div class="panel-h"><div class="panel-t">Registrados en esta sesión</div><div class="panel-c" id="addCnt">0</div></div>
+          <table><thead><tr><th>Runner ID</th><th>Nombre</th><th>Provincia</th><th>Año</th><th>Dist.</th><th>Categoría</th><th>Tiempo</th><th>Pos.</th></tr></thead>
+          <tbody id="addBody"></tbody></table>
+        </div>
+      </div>
+    </div>
+
+    <!-- RESULTADOS -->
+    <div id="s-res" class="a-sec">
+      <div class="at">Resultados</div>
+      <div class="as2">Todos los resultados de carrera.</div>
+      <div style="display:flex;gap:.6rem;margin-bottom:1rem;flex-wrap:wrap;">
+        <select class="fsel" id="resYear" onchange="loadResults()" style="width:auto"><option value="">Todos los años</option></select>
+        <select class="fsel" id="resDist" onchange="loadResults()" style="width:auto"><option value="">Todas las distancias</option><option>21K</option><option>10K</option><option>5K</option></select>
+      </div>
+      <div id="resContent"></div>
+    </div>
+
+    <!-- EDICIONES -->
+    <div id="s-edi" class="a-sec">
+      <div class="at">Ediciones</div>
+      <div class="as2">Resumen por año del evento.</div>
+      <div id="ediContent"></div>
+    </div>
+
+    <!-- CONFIG -->
+    <div id="s-cfg" class="a-sec">
+      <div class="at">Configuración</div>
+      <div class="as2">Ajustes generales del sistema.</div>
+      <div class="panel" style="cursor:default">
+        <div class="panel-h"><div class="panel-t">General</div></div>
+        <div style="padding:1.4rem">
+          <div class="fr">
+            <div class="ff"><label class="fl">Nombre del evento</label><input class="fi" value="21K de Yerba Buena"></div>
+            <div class="ff"><label class="fl">Ciudad</label><input class="fi" value="Yerba Buena, Tucumán"></div>
+          </div>
+          <div style="text-align:right"><button class="btn-g" onclick="toast('Configuración guardada ✓')">Guardar cambios</button></div>
+        </div>
+      </div>
+      <div class="panel" style="cursor:default">
+        <div class="panel-h"><div class="panel-t">Cambiar contraseña admin</div></div>
+        <div style="padding:1.4rem">
+          <div class="fr">
+            <div class="ff"><label class="fl">Contraseña actual</label><input class="fi" type="password" id="cpOld" placeholder="••••••"></div>
+            <div class="ff"><label class="fl">Nueva contraseña</label><input class="fi" type="password" id="cpNew" placeholder="Mínimo 8 caracteres"></div>
+          </div>
+          <div style="text-align:right"><button class="btn-g" onclick="toast('Función disponible en deploy real')">Cambiar contraseña</button></div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /am -->
+</div><!-- /aw -->
+</div><!-- /adminPanel -->
+
+<footer>
+  <strong>21K Yerba Buena</strong> · Panel de administración · Tucumán, Argentina
+</footer>
+
+<script src="/assets/api.js"></script>
+<script>
+// ── TOAST ──────────────────────────────────────────────────
+function toast(msg, type = 'ok') {
+  const el = document.createElement('div');
+  el.className = `toast ${type === 'error' ? 'err' : 'ok'}`;
+  el.textContent = msg;
+  document.body.appendChild(el);
+  setTimeout(() => el.remove(), 3500);
+}
+
+// ── INIT ───────────────────────────────────────────────────
+async function init() {
+  const data = await API.getAdmin('/session');
+  if (data.loggedIn) {
+    showPanel();
+  } else {
+    document.getElementById('loginWrap').style.display = 'flex';
+  }
+}
+
+function showPanel() {
+  document.getElementById('loginWrap').style.display = 'none';
+  document.getElementById('adminPanel').style.display = 'block';
+  loadDashboard();
+}
+
+// ── AUTH ───────────────────────────────────────────────────
+async function doLogin() {
+  const username = document.getElementById('lu').value.trim();
+  const password = document.getElementById('lp').value;
+  document.getElementById('lerr').textContent = '';
+  const data = await API.postAdmin('/login', { username, password });
+  if (data.ok) { showPanel(); }
+  else { document.getElementById('lerr').textContent = data.error || 'Error al ingresar'; }
+}
+
+async function doLogout() {
+  await API.postAdmin('/logout', {});
+  location.reload();
+}
+
+document.getElementById('lp')?.addEventListener('keydown', e => { if(e.key==='Enter') doLogin(); });
+
+// ── NAVIGATION ─────────────────────────────────────────────
+function nav(el, sec) {
+  document.querySelectorAll('.ai').forEach(a => a.classList.remove('active'));
+  el.classList.add('active');
+  document.querySelectorAll('.a-sec').forEach(s => s.classList.remove('active'));
+  document.getElementById(sec).classList.add('active');
+  if (sec === 's-run')  loadRunners();
+  if (sec === 's-res')  loadResults();
+  if (sec === 's-edi')  loadEditions();
+  if (sec === 's-dup')  loadDuplicates();
+  if (sec === 's-dash') loadDashboard();
+}
+
+// ── DASHBOARD ──────────────────────────────────────────────
+async function loadDashboard() {
+  try {
+    const data = await API.getAdmin('/dashboard');
+    const s = data.stats || {};
+    document.getElementById('kRunners').textContent  = (s.runners  || 0).toLocaleString('es-AR');
+    document.getElementById('kResults').textContent  = (s.results  || 0).toLocaleString('es-AR');
+    document.getElementById('kEditions').textContent = (s.editions || 0).toLocaleString('es-AR');
+    document.getElementById('kDupes').textContent    = (s.duplicates || 0).toLocaleString('es-AR');
+    document.getElementById('dashDate').textContent  = 'Última actualización: ' + new Date().toLocaleDateString('es-AR');
+    if (s.duplicates > 0) {
+      const badge = document.getElementById('dbadge');
+      badge.textContent = s.duplicates;
+      badge.style.display = 'inline';
+    }
+    const editions = data.last_editions || [];
+    const tbody = document.getElementById('edBody');
+    if (editions.length === 0) {
+      document.getElementById('edTable').style.display = 'none';
+      document.getElementById('edEmpty').style.display = 'block';
+    } else {
+      tbody.innerHTML = editions.map(e => `
+        <tr>
+          <td class="tdy">${e.year}</td>
+          <td>${e.distances.split(',').map(d=>`<span class="tdd">${d.trim()}</span>`).join(' ')}</td>
+          <td>${parseInt(e.total_results).toLocaleString('es-AR')}</td>
+          <td style="font-size:.78rem;color:var(--text3)">${new Date(e.loaded_at).toLocaleDateString('es-AR')}</td>
+        </tr>`).join('');
+    }
+  } catch(e) { console.error(e); }
+}
+
+// ── CORREDORES ─────────────────────────────────────────────
+let runPage = 1;
+async function loadRunners() {
+  const q = document.getElementById('runQ').value.trim();
+  const container = document.getElementById('runContent');
+  container.innerHTML = '<div style="color:var(--text3);font-size:.85rem;padding:1rem 0">Cargando...</div>';
+  try {
+    const data = await API.getAdmin(`/runners?page=${runPage}&limit=25${q ? '&q='+encodeURIComponent(q) : ''}`);
+    const runners = data.runners || [];
+    if (!runners.length) {
+      container.innerHTML = '<div style="color:var(--text3);font-size:.85rem;padding:1rem 0">Sin corredores encontrados.</div>';
+      return;
+    }
+    container.innerHTML = `
+      <div class="tbl-wrap">
+        <table>
+          <thead><tr><th>Runner ID</th><th>Nombre</th><th>Apellido</th><th>Sexo</th><th>Provincia</th><th>DNI</th><th>Part.</th></tr></thead>
+          <tbody>${runners.map(r => `
+            <tr>
+              <td class="rid" style="font-size:.8rem">${r.runner_id}</td>
+              <td>${r.name}</td><td>${r.surname}</td><td>${r.gender||'—'}</td>
+              <td style="font-size:.82rem;color:var(--text2)">${r.province||'—'}</td>
+              <td style="font-size:.78rem;color:var(--text3)">****${r.dni ? r.dni.slice(-3) : '—'}</td>
+              <td style="font-family:var(--font-d);color:var(--accent)">${r.total_races}</td>
+            </tr>`).join('')}
+          </tbody>
+        </table>
+        <div class="pag">
+          <span>Mostrando ${runners.length} de ${data.total?.toLocaleString('es-AR')} corredores</span>
+          <div class="pagb">
+            ${Array.from({length: Math.min(data.pages, 5)}, (_,i) => `<button class="pb ${i+1===data.page?'active':''}" onclick="runPage=${i+1};loadRunners()">${i+1}</button>`).join('')}
+            ${data.pages > 5 ? `<span style="color:var(--text3);padding:.3rem .5rem">…${data.pages}</span>` : ''}
+          </div>
+        </div>
+      </div>`;
+  } catch(e) { container.innerHTML = '<div style="color:var(--red);font-size:.85rem">Error al cargar.</div>'; }
+}
+
+// ── RESULTADOS ─────────────────────────────────────────────
+let resPage = 1;
+async function loadResults() {
+  const year = document.getElementById('resYear').value;
+  const dist = document.getElementById('resDist').value;
+  const container = document.getElementById('resContent');
+  container.innerHTML = '<div style="color:var(--text3);font-size:.85rem;padding:1rem 0">Cargando...</div>';
+  try {
+    let url = `/results?page=${resPage}&limit=25`;
+    if (year) url += `&year=${year}`;
+    if (dist) url += `&distance=${dist}`;
+    const data = await API.getAdmin(url);
+    const results = data.results || [];
+    if (!results.length) {
+      container.innerHTML = '<div style="color:var(--text3);font-size:.85rem;padding:1rem 0">Sin resultados.</div>';
+      return;
+    }
+    container.innerHTML = `
+      <div class="tbl-wrap">
+        <table>
+          <thead><tr><th>Año</th><th>Runner ID</th><th>Corredor</th><th>Dist.</th><th>Categoría</th><th>Tiempo</th><th>Pos. gral</th></tr></thead>
+          <tbody>${results.map(r => `
+            <tr>
+              <td class="tdy">${r.year}</td>
+              <td class="rid" style="font-size:.78rem">${r.runner_id}</td>
+              <td>${r.name} ${r.surname}</td>
+              <td><span class="tdd">${r.distance}</span></td>
+              <td style="font-size:.82rem;color:var(--text2)">${r.category||'—'}</td>
+              <td class="tdt">${r.time_raw}</td>
+              <td style="font-family:var(--font-d)">${r.position_general ? '#'+r.position_general : '—'}</td>
+            </tr>`).join('')}
+          </tbody>
+        </table>
+        <div class="pag">
+          <span>Mostrando ${results.length} de ${data.total?.toLocaleString('es-AR')} resultados</span>
+          <div class="pagb">
+            ${Array.from({length: Math.min(data.pages, 5)}, (_,i) => `<button class="pb ${i+1===data.page?'active':''}" onclick="resPage=${i+1};loadResults()">${i+1}</button>`).join('')}
+          </div>
+        </div>
+      </div>`;
+    // Populate year filter
+    const yearSel = document.getElementById('resYear');
+    if (yearSel.options.length === 1) {
+      const years = [...new Set(results.map(r => r.year))].sort((a,b) => b-a);
+      years.forEach(y => yearSel.add(new Option(y, y)));
+    }
+  } catch(e) { container.innerHTML = '<div style="color:var(--red);font-size:.85rem">Error al cargar.</div>'; }
+}
+
+// ── EDICIONES ──────────────────────────────────────────────
+async function loadEditions() {
+  const container = document.getElementById('ediContent');
+  container.innerHTML = '<div style="color:var(--text3);font-size:.85rem;padding:1rem 0">Cargando...</div>';
+  try {
+    const data = await API.getAdmin('/dashboard');
+    const editions = data.last_editions || [];
+    if (!editions.length) {
+      container.innerHTML = '<div style="color:var(--text3);font-size:.85rem;padding:1rem 0">Sin ediciones cargadas aún.</div>';
+      return;
+    }
+    container.innerHTML = `
+      <div class="tbl-wrap">
+        <table>
+          <thead><tr><th>Año</th><th>Distancias</th><th>Participantes</th><th>Fecha de carga</th><th>Estado</th></tr></thead>
+          <tbody>${editions.map(e => `
+            <tr>
+              <td class="tdy">${e.year}</td>
+              <td>${e.distances.split(',').map(d=>`<span class="tdd">${d.trim()}</span>`).join(' ')}</td>
+              <td>${parseInt(e.total_results).toLocaleString('es-AR')}</td>
+              <td style="font-size:.78rem;color:var(--text3)">${new Date(e.loaded_at).toLocaleDateString('es-AR')}</td>
+              <td style="color:var(--accent);font-weight:600;font-size:.82rem">✓ Publicada</td>
+            </tr>`).join('')}
+          </tbody>
+        </table>
+      </div>`;
+  } catch(e) { container.innerHTML = '<div style="color:var(--red)">Error.</div>'; }
+}
+
+// ── DUPLICADOS ─────────────────────────────────────────────
+async function loadDuplicates() {
+  const container = document.getElementById('dupContent');
+  container.innerHTML = '<div style="color:var(--text3);font-size:.85rem;padding:1rem 0">Cargando...</div>';
+  try {
+    const data = await API.getAdmin('/duplicates');
+    const dupes = data.duplicates || [];
+    if (!dupes.length) {
+      container.innerHTML = '<div style="color:var(--accent);font-size:.88rem;padding:1rem 0">✓ Sin duplicados pendientes.</div>';
+      return;
+    }
+    container.innerHTML = dupes.map(d => `
+      <div class="panel" style="cursor:default;margin-bottom:.8rem;">
+        <div style="padding:1rem 1.2rem;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:.8rem;">
+          <div>
+            <div style="font-weight:600;margin-bottom:.3rem">${d.name_a} ${d.sur_a} <span class="rid">${d.runner_id_a}</span></div>
+            <div style="font-weight:600">${d.name_b_full||'?'} ${d.sur_b||''} ${d.runner_id_b ? `<span class="rid">${d.runner_id_b}</span>` : ''}</div>
+            <div style="font-size:.75rem;color:var(--text3);margin-top:.3rem">${d.reason||''}</div>
+          </div>
+          <div style="display:flex;gap:.5rem;">
+            <button class="bxs rd" onclick="resolveDup(${d.id},'merged')">Fusionar</button>
+            <button class="bxs mg" onclick="resolveDup(${d.id},'distinct')">Son distintos</button>
+          </div>
+        </div>
+      </div>`).join('');
+  } catch(e) { container.innerHTML = '<div style="color:var(--red)">Error al cargar.</div>'; }
+}
+
+async function resolveDup(id, action) {
+  const data = await API.putAdmin(`/duplicates/${id}/resolve`, { action });
+  if (data.ok) { toast(action === 'merged' ? 'Corredores fusionados' : 'Marcados como distintos'); loadDuplicates(); loadDashboard(); }
+}
+
+// ── IMPORT EXCEL ───────────────────────────────────────────
+let selectedFile = null;
+function onFile(input) {
+  selectedFile = input.files[0];
+  if (selectedFile) document.getElementById('sf').textContent = '📎 ' + selectedFile.name;
+}
+const upz = document.getElementById('upz');
+upz.addEventListener('dragover', e => { e.preventDefault(); upz.classList.add('drag'); });
+upz.addEventListener('dragleave', () => upz.classList.remove('drag'));
+upz.addEventListener('drop', e => {
+  e.preventDefault(); upz.classList.remove('drag');
+  selectedFile = e.dataTransfer.files[0];
+  if (selectedFile) document.getElementById('sf').textContent = '📎 ' + selectedFile.name;
+});
+
+async function doImport() {
+  const year = document.getElementById('iy').value;
+  const dist = document.getElementById('id2').value;
+  if (!year) { toast('Ingresá el año', 'error'); return; }
+  if (!selectedFile) { toast('Seleccioná un archivo', 'error'); return; }
+  const logBox = document.getElementById('logBox');
+  const logWrap = document.getElementById('impLog');
+  logWrap.style.display = 'block';
+  logBox.innerHTML = '<span style="color:var(--text3)">Procesando...</span>';
+  try {
+    const data = await API.uploadExcel(year, dist, selectedFile);
+    logBox.innerHTML = (data.log || []).map(l =>
+      `<div class="log-${l.type}">${l.msg}</div>`
+    ).join('');
+    if (data.ok) {
+      toast(`✓ ${data.inserted} resultados importados, ${data.newRunners} nuevos corredores`);
+      loadDashboard();
+      selectedFile = null;
+      document.getElementById('sf').textContent = 'Formatos aceptados: .xlsx, .xls — máx. 10MB';
+    } else {
+      toast(data.error || 'Error en la importación', 'error');
+    }
+  } catch(e) {
+    logBox.innerHTML = '<span class="log-err">Error de conexión.</span>';
+  }
+}
+
+// ── AGREGAR CORREDOR ────────────────────────────────────────
+function fmtTime(el) {
+  let v = el.value.replace(/[^0-9]/g,'');
+  if (v.length > 6) v = v.slice(0,6);
+  if (v.length >= 5) v = v.slice(0,1)+':'+v.slice(1,3)+':'+v.slice(3);
+  else if (v.length >= 3) v = v.slice(0,1)+':'+v.slice(1);
+  el.value = v;
+}
+function syncCat() {} // placeholder
+
+async function doAdd() { await submitAdd(false); }
+async function doAddForce() { await submitAdd(true); }
+
+async function submitAdd(force) {
+  const body = {
+    name:              document.getElementById('an').value.trim(),
+    surname:           document.getElementById('as').value.trim(),
+    dni:               document.getElementById('ad').value.trim(),
+    gender:            document.getElementById('ag').value,
+    province:          document.getElementById('aprov').value,
+    birth_date:        document.getElementById('adob').value || null,
+    year:              document.getElementById('ayr').value,
+    distance:          document.getElementById('adist').value,
+    category:          document.getElementById('acat').value,
+    time_raw:          document.getElementById('atm').value.trim(),
+    position_general:  document.getElementById('apos').value || null,
+    position_category: document.getElementById('aposc').value || null,
+  };
+  if (force) body.force_create = true;
+  document.getElementById('add-dup-warn').style.display = 'none';
+
+  const data = await API.postAdmin('/runners', body);
+
+  if (data.ok) {
+    toast(`${body.name} ${body.surname} → ${data.runner_id} ✓`);
+    addToRecentTable(data.runner_id, body);
+    clearAdd();
+    loadDashboard();
+  } else if (data.error && data.error.includes('duplicado')) {
+    document.getElementById('add-dup-msg').innerHTML =
+      `Ya existe <strong>${body.name} ${body.surname}</strong> con ID <span style="color:var(--accent);font-family:var(--font-d);font-weight:700">${data.existing_runner_id}</span>. ¿Son personas distintas?`;
+    document.getElementById('add-dup-warn').style.display = 'block';
+  } else {
+    toast(data.error || 'Error al registrar', 'error');
+  }
+}
+
+function addToRecentTable(rid, b) {
+  const tbody = document.getElementById('addBody');
+  const tr = document.createElement('tr');
+  tr.innerHTML = `
+    <td class="rid" style="font-size:.8rem">${rid}</td>
+    <td>${b.name} ${b.surname}</td>
+    <td style="font-size:.82rem;color:var(--text2)">${b.province||'—'}</td>
+    <td class="tdy">${b.year}</td>
+    <td><span class="tdd">${b.distance}</span></td>
+    <td style="font-size:.82rem">${b.category||'—'}</td>
+    <td class="tdt">${b.time_raw}</td>
+    <td style="font-family:var(--font-d)">${b.position_general?'#'+b.position_general:'—'}</td>`;
+  tbody.insertBefore(tr, tbody.firstChild);
+  document.getElementById('addRecent').style.display = 'block';
+  const cnt = document.getElementById('addCnt');
+  cnt.textContent = parseInt(cnt.textContent || 0) + 1 + ' nuevo' + (parseInt(cnt.textContent||0)+1!==1?'s':'');
+}
+
+function clearAdd() {
+  ['an','as','ad','atm','apos','aposc'].forEach(id => { const el = document.getElementById(id); if(el) el.value=''; });
+  ['ag','ayr','adist','acat'].forEach(id => { const el = document.getElementById(id); if(el) el.value=''; });
+  document.getElementById('adob').value = '';
+  document.getElementById('aprov').value = 'Tucumán';
+}
+
+init();
+</script>
+</body>
+</html>
