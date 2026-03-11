@@ -31,9 +31,19 @@ app.use(express.static(path.join(__dirname, 'public')));
 app.use('/api',       apiRoutes);
 app.use('/api/admin', adminRoutes);
 
-// --- Fallback: sirve index o buscar.html ---
+// --- Rutas de páginas HTML ---
+const sendPage = (page) => (req, res) =>
+  res.sendFile(path.join(__dirname, 'public', page));
+
+app.get('/',            sendPage('index.html'));
+app.get('/buscar',      sendPage('buscar.html'));
+app.get('/rankings',    sendPage('rankings.html'));
+app.get('/admin',       sendPage('admin.html'));
+app.get('/corredor/:id', sendPage('corredor.html'));
+
+// Fallback 404
 app.get('*', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'buscar.html'));
+  res.status(404).sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
 // --- Inicio del servidor ---
