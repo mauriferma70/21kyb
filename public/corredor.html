@@ -178,18 +178,25 @@ function renderTable(dist) {
 
 function filterDist(d) {
   renderTable(d);
-  if (d !== 'all') renderChart(d);
+  if (d !== 'all') {
+    renderChart(d);
+  } else {
+    document.getElementById('chartSection').style.display = 'none';
+  }
 }
 
 function renderChart(dist) {
   const rows = allResults.filter(r => r.distance === dist && r.time_seconds).sort((a,b) => a.year - b.year);
   const section = document.getElementById('chartSection');
-  if (rows.length < 2) { section.style.display = 'none'; return; }
+  if (rows.length < 2) { 
+    section.style.display = 'none'; 
+    return; 
+  }
   section.style.display = 'block';
   document.getElementById('chartDist').textContent = dist;
 
   const labels = rows.map(r => r.year);
-  const values = rows.map(r => r.time_seconds / 60); // en minutos para el gráfico
+  const values = rows.map(r => r.time_seconds / 60);
 
   if (evolChartInst) evolChartInst.destroy();
   evolChartInst = new Chart(document.getElementById('evolChart'), {
@@ -197,7 +204,7 @@ function renderChart(dist) {
     data: {
       labels,
       datasets: [{
-        label: dist,
+        label: `Tiempos en ${dist}`,
         data: values,
         borderColor: '#78C02C',
         backgroundColor: 'rgba(120,192,44,.08)',
@@ -227,13 +234,13 @@ function renderChart(dist) {
         }
       },
       scales: {
-        x: { grid: { color: 'rgba(51,51,51,.6)' }, ticks: { color: '#5A5A5A', font: { family: 'Barlow Condensed', weight: '700' } } },
+        x: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#888', font: { family: 'DM Sans', weight: '500' } } },
         y: {
-          reverse: true,
-          grid: { color: 'rgba(51,51,51,.6)' },
+          reverse: true, // Importante: Menos tiempo es mejor (arriba)
+          grid: { color: 'rgba(255,255,255,0.05)' },
           ticks: {
-            color: '#5A5A5A',
-            font: { family: 'Barlow Condensed', weight: '700' },
+            color: '#888',
+            font: { family: 'DM Sans', weight: '500' },
             callback: v => { const t=Math.round(v*60); const h=Math.floor(t/3600),m=Math.floor((t%3600)/60),s=t%60; return `${h}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`; }
           }
         }

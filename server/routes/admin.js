@@ -26,6 +26,7 @@ router.get('/dashboard',                       requireAdmin, ctrl.getDashboard);
 router.get('/runners',                         requireAdmin, ctrl.getRunners);
 router.post('/runners',                        requireAdmin, ctrl.addRunner);
 router.put('/runners/:runner_id',              requireAdmin, ctrl.updateRunner);
+router.delete('/runners/:runner_id',           requireAdmin, ctrl.deleteRunner);
 router.get('/results',                         requireAdmin, ctrl.getResults);
 router.post('/results',                        requireAdmin, ctrl.addResult);
 router.put('/results/:id',                     requireAdmin, ctrl.updateResult);

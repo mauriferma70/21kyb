@@ -475,7 +475,10 @@ async function loadRunners() {
               <td style="font-size:.82rem;color:var(--text2)">${r.province||'—'}</td>
               <td style="font-size:.78rem;color:var(--text3)">****${r.dni ? r.dni.slice(-3) : '—'}</td>
               <td style="font-family:var(--font-d);color:var(--accent)">${r.total_races}</td>
-              <td><button class="bxs mg" style="padding:.2rem .4rem;font-size:.65rem" onclick='openEditRunner(${JSON.stringify(r).replace(/'/g, "&#39;")})'>Editar</button></td>
+              <td>
+                <button class="bxs mg" style="padding:.2rem .4rem;font-size:.65rem" onclick='openEditRunner(${JSON.stringify(r).replace(/'/g, "&#39;")})'>Editar</button>
+                <button class="bxs rd" style="padding:.2rem .4rem;font-size:.65rem;margin-left:4px;" onclick="deleteRunner('${r.runner_id}')">Eliminar</button>
+              </td>
             </tr>`).join('')}
           </tbody>
         </table>
@@ -739,6 +742,18 @@ async function saveRunner() {
   const res = await API.putAdmin(`/runners/${rid}`, data);
   if(res.ok) { toast('Corredor actualizado'); closeModal('modRun'); loadRunners(); loadDuplicates(); }
   else { toast(res.error || 'Error', 'error'); }
+}
+
+async function deleteRunner(rid) {
+  if (!confirm(`¿Estás seguro que deseas ELIMINAR al corredor ${rid} y todos sus resultados? Esta acción no se puede deshacer.`)) return;
+  const res = await API.deleteAdmin(`/runners/${rid}`);
+  if (res.ok) {
+    toast('Corredor eliminado');
+    loadRunners();
+    loadDashboard();
+  } else {
+    toast(res.error || 'Error al eliminar', 'error');
+  }
 }
 
 function openEditResult(r) {

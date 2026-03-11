@@ -278,6 +278,34 @@ async function updateRunner(req, res) {
   }
 }
 
+async function deleteRunner(req, res) {
+  const { runner_id } = req.params;
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+    
+    // 1. Eliminar resultados asociados (o por Foreign Key CASCADE si existe, pero lo hacemos manual por si acaso)
+    await client.query('DELETE FROM race_results WHERE runner_id = $1', [runner_id.toUpperCase()]);
+    
+    // 2. Eliminar al corredor
+    const result = await client.query('DELETE FROM runners WHERE runner_id = $1', [runner_id.toUpperCase()]);
+    
+    if (result.rowCount === 0) {
+      await client.query('ROLLBACK');
+      return res.status(404).json({ error: 'Corredor no encontrado' });
+    }
+
+    await client.query('COMMIT');
+    res.json({ ok: true, message: 'Corredor y sus resultados eliminados correctamente' });
+  } catch (err) {
+    await client.query('ROLLBACK');
+    console.error('Error al eliminar corredor:', err);
+    res.status(500).json({ error: 'Error al eliminar el corredor' });
+  } finally {
+    client.release();
+  }
+}
+
 // ── RESULTADOS ───────────────────────────────────────────────
 
 async function getResults(req, res) {
@@ -537,7 +565,7 @@ async function resolveDuplicate(req, res) {
 module.exports = {
   login, logout, sessionStatus,
   getDashboard,
-  getRunners, addRunner, updateRunner,
+  getRunners, addRunner, updateRunner, deleteRunner,
   getResults, addResult, updateResult,
   importExcel,
   getDuplicates, resolveDuplicate,
