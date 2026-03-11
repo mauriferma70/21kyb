@@ -5,6 +5,7 @@ const path    = require('path');
 
 const apiRoutes   = require('./server/routes/api');
 const adminRoutes = require('./server/routes/admin');
+const rateLimit   = require('express-rate-limit');
 
 const app  = express();
 const PORT = process.env.PORT || 3000;
@@ -31,8 +32,24 @@ app.use(session({
 // --- Archivos estáticos ---
 app.use(express.static(path.join(__dirname, 'public')));
 
+// --- Limitadores de Tasa (Rate Limiting) ---
+const apiLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, 
+  max: 200, 
+  message: { error: 'Demasiadas peticiones desde esta IP, por favor intenta más tarde.' },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+const adminLoginLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 30, // 30 intentos por 15 minutos para panel admin
+  message: { error: 'Demasiados intentos de inicio de sesión. Intenta más tarde.' },
+});
+
 // --- Rutas API ---
-app.use('/api',       apiRoutes);
+app.use('/api', apiLimiter, apiRoutes);
+app.use('/api/admin/login', adminLoginLimiter);
 app.use('/api/admin', adminRoutes);
 
 // --- Rutas de páginas HTML ---

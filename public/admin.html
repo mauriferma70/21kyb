@@ -47,7 +47,13 @@
   /* Pagination */
   .rsb2 { margin-bottom:1rem; }
   .rs2  { width:100%; max-width:360px; background:var(--bg3); border:1px solid var(--border2); border-radius:8px; padding:.6rem .9rem; color:var(--text); font-family:var(--font-b); font-size:.85rem; outline:none; }
+  .rs2  { width:100%; max-width:360px; background:var(--bg3); border:1px solid var(--border2); border-radius:8px; padding:.6rem .9rem; color:var(--text); font-family:var(--font-b); font-size:.85rem; outline:none; }
   .rs2:focus { border-color:var(--accent); }
+  /* Modals */
+  .modal-overlay { position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.6); display:none; justify-content:center; align-items:center; z-index:999; backdrop-filter:blur(2px); }
+  .modal-box { background:var(--bg2); border:1px solid var(--border); border-radius:12px; padding:2rem; width:100%; max-width:460px; max-height:90vh; overflow-y:auto; box-shadow:0 10px 30px rgba(0,0,0,0.5); }
+  .modal-t { font-family:var(--font-d); font-size:1.4rem; font-weight:800; margin-bottom:1.5rem; }
+  
   @media(max-width:680px){ .aw{flex-direction:column;} .aside{width:100%;height:auto;position:static;display:flex;flex-wrap:wrap;gap:.2rem;padding:.5rem;} .aside-l{display:none;} .ai{border-left:none;border-bottom:2px solid transparent;} .ai.active{border-bottom-color:var(--accent);} .akpis{grid-template-columns:repeat(2,1fr);} }
 </style>
 </head>
@@ -313,6 +319,43 @@
 
   </div><!-- /am -->
 </div><!-- /aw -->
+
+  <!-- Edit Runner Modal -->
+  <div class="modal-overlay" id="modRun">
+    <div class="modal-box">
+      <div class="modal-t">Editar Corredor <span id="er-id" style="color:var(--accent);font-size:1rem;margin-left:8px"></span></div>
+      <div class="ff" style="margin-bottom:1rem"><label class="fl">Nombre</label><input class="fi" id="er-n"></div>
+      <div class="ff" style="margin-bottom:1rem"><label class="fl">Apellido</label><input class="fi" id="er-s"></div>
+      <div class="ff" style="margin-bottom:1rem"><label class="fl">Sexo</label>
+        <select class="fsel" id="er-g"><option value="M">Masculino</option><option value="F">Femenino</option></select>
+      </div>
+      <div class="ff" style="margin-bottom:1rem"><label class="fl">Provincia</label><input class="fi" id="er-p"></div>
+      <div class="ff" style="margin-bottom:1.5rem"><label class="fl">Nacionalidad</label><input class="fi" id="er-nac" placeholder="Argentino/a"></div>
+      <div style="display:flex;gap:.8rem;justify-content:flex-end">
+        <button class="bxs df" onclick="closeModal('modRun')">Cancelar</button>
+        <button class="btn-g" onclick="saveRunner()">Guardar cambios</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Edit Result Modal -->
+  <div class="modal-overlay" id="modRes">
+    <div class="modal-box">
+      <div class="modal-t">Editar Resultado</div>
+      <div class="ff" style="margin-bottom:1rem"><label class="fl">Categoría</label><input class="fi" id="eres-cat"></div>
+      <div class="ff" style="margin-bottom:1rem"><label class="fl">Tiempo (H:MM:SS)</label><input class="fi" id="eres-time" oninput="fmtTime(this)"></div>
+      <div class="fr" style="margin-bottom:1.5rem">
+        <div class="ff"><label class="fl">Pos. General</label><input type="number" class="fi" id="eres-pg"></div>
+        <div class="ff"><label class="fl">Pos. Categoría</label><input type="number" class="fi" id="eres-pc"></div>
+      </div>
+      <input type="hidden" id="eres-id">
+      <div style="display:flex;gap:.8rem;justify-content:flex-end">
+        <button class="bxs df" onclick="closeModal('modRes')">Cancelar</button>
+        <button class="btn-g" onclick="saveResult()">Guardar cambios</button>
+      </div>
+    </div>
+  </div>
+
 </div><!-- /adminPanel -->
 
 <footer>
@@ -424,7 +467,7 @@ async function loadRunners() {
     container.innerHTML = `
       <div class="tbl-wrap">
         <table>
-          <thead><tr><th>Runner ID</th><th>Nombre</th><th>Apellido</th><th>Sexo</th><th>Provincia</th><th>DNI</th><th>Part.</th></tr></thead>
+          <thead><tr><th>Runner ID</th><th>Nombre</th><th>Apellido</th><th>Sexo</th><th>Provincia</th><th>DNI</th><th>Part.</th><th>Acción</th></tr></thead>
           <tbody>${runners.map(r => `
             <tr>
               <td class="rid" style="font-size:.8rem">${r.runner_id}</td>
@@ -432,6 +475,7 @@ async function loadRunners() {
               <td style="font-size:.82rem;color:var(--text2)">${r.province||'—'}</td>
               <td style="font-size:.78rem;color:var(--text3)">****${r.dni ? r.dni.slice(-3) : '—'}</td>
               <td style="font-family:var(--font-d);color:var(--accent)">${r.total_races}</td>
+              <td><button class="bxs mg" style="padding:.2rem .4rem;font-size:.65rem" onclick='openEditRunner(${JSON.stringify(r).replace(/'/g, "&#39;")})'>Editar</button></td>
             </tr>`).join('')}
           </tbody>
         </table>
@@ -466,7 +510,7 @@ async function loadResults() {
     container.innerHTML = `
       <div class="tbl-wrap">
         <table>
-          <thead><tr><th>Año</th><th>Runner ID</th><th>Corredor</th><th>Dist.</th><th>Categoría</th><th>Tiempo</th><th>Pos. gral</th></tr></thead>
+          <thead><tr><th>Año</th><th>Runner ID</th><th>Corredor</th><th>Dist.</th><th>Categoría</th><th>Tiempo</th><th>Pos. gral</th><th>Acción</th></tr></thead>
           <tbody>${results.map(r => `
             <tr>
               <td class="tdy">${r.year}</td>
@@ -476,6 +520,7 @@ async function loadResults() {
               <td style="font-size:.82rem;color:var(--text2)">${r.category||'—'}</td>
               <td class="tdt">${r.time_raw}</td>
               <td style="font-family:var(--font-d)">${r.position_general ? '#'+r.position_general : '—'}</td>
+              <td><button class="bxs mg" style="padding:.2rem .4rem;font-size:.65rem" onclick='openEditResult(${JSON.stringify(r).replace(/'/g, "&#39;")})'>Editar</button></td>
             </tr>`).join('')}
           </tbody>
         </table>
@@ -669,6 +714,52 @@ function clearAdd() {
   ['ag','ayr','adist','acat'].forEach(id => { const el = document.getElementById(id); if(el) el.value=''; });
   document.getElementById('adob').value = '';
   document.getElementById('aprov').value = 'Tucumán';
+}
+
+// ── EDIT MODALS ────────────────────────────────────────────
+function closeModal(id) { document.getElementById(id).style.display = 'none'; }
+function openEditRunner(r) {
+  document.getElementById('er-id').textContent = r.runner_id;
+  document.getElementById('er-n').value = r.name || '';
+  document.getElementById('er-s').value = r.surname || '';
+  document.getElementById('er-g').value = r.gender || '';
+  document.getElementById('er-p').value = r.province || '';
+  document.getElementById('er-nac').value = r.nationality || 'Argentino/a';
+  document.getElementById('modRun').style.display = 'flex';
+}
+async function saveRunner() {
+  const rid = document.getElementById('er-id').textContent;
+  const data = {
+    name: document.getElementById('er-n').value,
+    surname: document.getElementById('er-s').value,
+    gender: document.getElementById('er-g').value,
+    province: document.getElementById('er-p').value,
+    nationality: document.getElementById('er-nac').value
+  };
+  const res = await API.putAdmin(`/runners/${rid}`, data);
+  if(res.ok) { toast('Corredor actualizado'); closeModal('modRun'); loadRunners(); loadDuplicates(); }
+  else { toast(res.error || 'Error', 'error'); }
+}
+
+function openEditResult(r) {
+  document.getElementById('eres-id').value = r.id;
+  document.getElementById('eres-cat').value = r.category || '';
+  document.getElementById('eres-time').value = r.time_raw || '';
+  document.getElementById('eres-pg').value = r.position_general || '';
+  document.getElementById('eres-pc').value = r.position_category || '';
+  document.getElementById('modRes').style.display = 'flex';
+}
+async function saveResult() {
+  const id = document.getElementById('eres-id').value;
+  const data = {
+    category: document.getElementById('eres-cat').value,
+    time_raw: document.getElementById('eres-time').value,
+    position_general: document.getElementById('eres-pg').value || null,
+    position_category: document.getElementById('eres-pc').value || null
+  };
+  const res = await API.putAdmin(`/results/${id}`, data);
+  if(res.ok) { toast('Resultado actualizado'); closeModal('modRes'); loadResults(); }
+  else { toast(res.error || 'Error', 'error'); }
 }
 
 init();

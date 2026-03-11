@@ -92,34 +92,68 @@ async function getRunners(req, res) {
   const offset = (page - 1) * limit;
 
   try {
+    const qNorm = q.normalize("NFD").replace(/[\u0300-\u036f]/g, ""); // Remove accents in JS for $3 matching
+
     const whereClause = q
+      ? `WHERE unaccent(LOWER(r.name || ' ' || r.surname)) LIKE unaccent(LOWER($3))
+            OR unaccent(LOWER(r.surname || ' ' || r.name)) LIKE unaccent(LOWER($3))
+            OR r.runner_id ILIKE $3
+            OR r.dni LIKE $3`
+      : '';
+    // Fallback if unaccent is not installed
+    const whereClauseFallback = q
       ? `WHERE LOWER(r.name || ' ' || r.surname) LIKE LOWER($3)
             OR LOWER(r.surname || ' ' || r.name) LIKE LOWER($3)
             OR r.runner_id ILIKE $3
             OR r.dni LIKE $3`
       : '';
+
     const params = q
-      ? [limit, offset, `%${q}%`]
+      ? [limit, offset, `%${qNorm}%`]
       : [limit, offset];
 
-    const [data, total] = await Promise.all([
-      pool.query(
-        `SELECT r.runner_id, r.name, r.surname, r.gender, r.province, r.dni,
-                COUNT(rr.id) AS total_races,
-                MIN(rr.time_seconds) AS best_time_seconds
-         FROM runners r
-         LEFT JOIN race_results rr ON rr.runner_id = r.runner_id
-         ${whereClause}
-         GROUP BY r.runner_id, r.name, r.surname, r.gender, r.province, r.dni
-         ORDER BY r.surname, r.name
-         LIMIT $1 OFFSET $2`,
-        params
-      ),
-      pool.query(
-        `SELECT COUNT(*) FROM runners r ${whereClause}`,
-        q ? [`%${q}%`] : []
-      ),
-    ]);
+    const whereCount = q 
+      ? `WHERE LOWER(r.name || ' ' || r.surname) LIKE LOWER($1)
+            OR LOWER(r.surname || ' ' || r.name) LIKE LOWER($1)
+            OR r.runner_id ILIKE $1
+            OR r.dni LIKE $1`
+      : '';
+
+    let data, total;
+    try {
+      [data, total] = await Promise.all([
+        pool.query(
+          `SELECT r.runner_id, r.name, r.surname, r.gender, r.province, r.dni,
+                  COUNT(rr.id) AS total_races,
+                  MIN(rr.time_seconds) AS best_time_seconds
+           FROM runners r
+           LEFT JOIN race_results rr ON rr.runner_id = r.runner_id
+           ${whereClause}
+           GROUP BY r.runner_id, r.name, r.surname, r.gender, r.province, r.dni
+           ORDER BY r.surname, r.name
+           LIMIT $1 OFFSET $2`,
+          params
+        ),
+        pool.query(`SELECT COUNT(*) FROM runners r ${whereCount}`, q ? [`%${qNorm}%`] : [])
+      ]);
+    } catch (e) {
+      // Fallback without unaccent
+      [data, total] = await Promise.all([
+        pool.query(
+          `SELECT r.runner_id, r.name, r.surname, r.gender, r.province, r.dni,
+                  COUNT(rr.id) AS total_races,
+                  MIN(rr.time_seconds) AS best_time_seconds
+           FROM runners r
+           LEFT JOIN race_results rr ON rr.runner_id = r.runner_id
+           ${whereClauseFallback}
+           GROUP BY r.runner_id, r.name, r.surname, r.gender, r.province, r.dni
+           ORDER BY r.surname, r.name
+           LIMIT $1 OFFSET $2`,
+          params
+        ),
+        pool.query(`SELECT COUNT(*) FROM runners r ${whereCount}`, q ? [`%${qNorm}%`] : [])
+      ]);
+    }
 
     res.json({
       runners: data.rows,
