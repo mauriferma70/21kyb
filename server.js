@@ -13,6 +13,9 @@ const PORT = process.env.PORT || 3000;
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+// Confiar en el proxy de Railway para que funcionen las cookies secure
+app.set('trust proxy', 1);
+
 app.use(session({
   secret:            process.env.SESSION_SECRET || 'secreto-21k-yb',
   resave:            false,
@@ -20,6 +23,7 @@ app.use(session({
   cookie: {
     secure:   process.env.NODE_ENV === 'production',
     httpOnly: true,
+    sameSite: 'lax',
     maxAge:   8 * 60 * 60 * 1000, // 8 horas
   },
 }));
