@@ -188,7 +188,7 @@ function filterDist(d) {
 function renderChart(dist) {
   const rows = allResults.filter(r => r.distance === dist && r.time_seconds).sort((a,b) => a.year - b.year);
   const section = document.getElementById('chartSection');
-  if (rows.length < 2) { 
+  if (rows.length < 1) { 
     section.style.display = 'none'; 
     return; 
   }
