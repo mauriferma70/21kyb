@@ -24,6 +24,7 @@ router.get('/session',        ctrl.sessionStatus);
 // Todo lo demás requiere estar logueado
 router.get('/dashboard',                       requireAdmin, ctrl.getDashboard);
 router.get('/runners',                         requireAdmin, ctrl.getRunners);
+router.get('/runners/by-dni/:dni',             requireAdmin, ctrl.getRunnerByDni);
 router.post('/runners',                        requireAdmin, ctrl.addRunner);
 router.put('/runners/:runner_id',              requireAdmin, ctrl.updateRunner);
 router.delete('/runners/:runner_id',           requireAdmin, ctrl.deleteRunner);

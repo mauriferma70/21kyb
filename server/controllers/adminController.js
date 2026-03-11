@@ -167,6 +167,30 @@ async function getRunners(req, res) {
   }
 }
 
+async function getRunnerByDni(req, res) {
+  const { dni } = req.params;
+  const cleanDni = normalizeDni(dni);
+  if (!cleanDni) return res.status(400).json({ error: 'DNI inválido' });
+
+  try {
+    const result = await pool.query(
+      `SELECT name, surname, gender, province,
+              TO_CHAR(birth_date, 'YYYY-MM-DD') as birth_date
+       FROM runners WHERE dni = $1 LIMIT 1`,
+      [cleanDni]
+    );
+
+    if (result.rows.length === 0) {
+      return res.json({ found: false });
+    }
+
+    res.json({ found: true, runner: result.rows[0] });
+  } catch(err) {
+    console.error('Error getRunnerByDni:', err);
+    res.status(500).json({ error: 'Error interno del servidor' });
+  }
+}
+
 async function addRunner(req, res) {
   const { name, surname, dni, gender, province, nationality, birth_date,
           year, distance, category, time_raw, position_general, position_category } = req.body;
@@ -579,7 +603,7 @@ async function resolveDuplicate(req, res) {
 module.exports = {
   login, logout, sessionStatus,
   getDashboard,
-  getRunners, addRunner, updateRunner, deleteRunner,
+  getRunners, getRunnerByDni, addRunner, updateRunner, deleteRunner,
   getResults, addResult, updateResult,
   importExcel,
   getDuplicates, resolveDuplicate,

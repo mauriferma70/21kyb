@@ -648,6 +648,40 @@ async function doImport() {
 }
 
 // ── AGREGAR CORREDOR ────────────────────────────────────────
+
+// Autofill por DNI
+let autofillTimeout = null;
+const dniInput = document.getElementById('ad');
+dniInput.addEventListener('input', () => {
+  clearTimeout(autofillTimeout);
+  const val = dniInput.value.trim();
+  if (val.length >= 7) {
+    autofillTimeout = setTimeout(() => attemptAutofill(val), 600);
+  }
+});
+dniInput.addEventListener('blur', () => {
+  const val = dniInput.value.trim();
+  if (val.length >= 7) attemptAutofill(val);
+});
+
+async function attemptAutofill(dni) {
+  try {
+    const res = await API.getAdmin(`/runners/by-dni/${dni}`);
+    if (res.found && res.runner) {
+      document.getElementById('an').value = res.runner.name || '';
+      document.getElementById('as').value = res.runner.surname || '';
+      document.getElementById('ag').value = res.runner.gender || '';
+      if (res.runner.province) document.getElementById('aprov').value = res.runner.province;
+      if (res.runner.birth_date) document.getElementById('adob').value = res.runner.birth_date;
+      
+      toast('✓ Datos autocompletados (DNI existente)');
+      document.getElementById('add-dup-warn').style.display = 'none'; // ocultar advertencia previa si la hubiera
+    }
+  } catch (err) {
+    console.error('Error autofill', err);
+  }
+}
+
 function fmtTime(el) {
   let v = el.value.replace(/[^0-9]/g,'');
   if (v.length > 6) v = v.slice(0,6);
