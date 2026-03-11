@@ -220,8 +220,8 @@ async function addRunner(req, res) {
     });
   } catch (err) {
     await client.query('ROLLBACK');
-    console.error(err);
-    res.status(500).json({ error: 'Error al registrar corredor' });
+    console.error('ERROR EN ADDRUNNER SQL:', err);
+    res.status(500).json({ error: 'Error al registrar corredor: ' + err.message });
   } finally {
     client.release();
   }
