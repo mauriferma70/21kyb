@@ -51,6 +51,8 @@ app.get('*', (req, res) => {
 });
 
 // --- Inicio del servidor ---
+require('child_process').execSync('node init-db.js', { stdio: 'inherit' });
+
 app.listen(PORT, () => {
   console.log(`🚀 Servidor corriendo en puerto ${PORT}`);
 });
