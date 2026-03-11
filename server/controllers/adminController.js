@@ -14,25 +14,22 @@ async function login(req, res) {
   const { username, password } = req.body;
   if (!username || !password)
     return res.status(400).json({ error: 'Usuario y contraseña requeridos' });
-  try {
-    const result = await pool.query(
-      'SELECT * FROM admin_users WHERE username = $1', [username]
-    );
-    if (result.rows.length === 0)
-      return res.status(401).json({ error: 'Credenciales incorrectas' });
 
-    const admin = result.rows[0];
-    const valid = await bcrypt.compare(password, admin.password_hash);
-    if (!valid)
-      return res.status(401).json({ error: 'Credenciales incorrectas' });
+  const adminUser = process.env.ADMIN_USERNAME || 'admin';
+  const adminPass = process.env.ADMIN_PASSWORD;
 
-    req.session.adminLoggedIn = true;
-    req.session.adminUser = admin.username;
-    res.json({ ok: true, username: admin.username });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'Error interno' });
+  if (!adminPass) {
+    console.error('ADMIN_PASSWORD no está configurada como variable de entorno');
+    return res.status(500).json({ error: 'Error de configuración del servidor' });
   }
+
+  if (username !== adminUser || password !== adminPass) {
+    return res.status(401).json({ error: 'Credenciales incorrectas' });
+  }
+
+  req.session.adminLoggedIn = true;
+  req.session.adminUser = username;
+  res.json({ ok: true, username });
 }
 
 function logout(req, res) {
