@@ -6,13 +6,16 @@ const API = {
     const res = await fetch(this.base + url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
       body: JSON.stringify(body),
     });
     return res.json();
   },
 
   async get(url) {
-    const res = await fetch(this.base + url);
+    const res = await fetch(this.base + url, {
+      credentials: 'include',
+    });
     return res.json();
   },
 
@@ -20,13 +23,16 @@ const API = {
     const res = await fetch(this.base + '/admin' + url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
       body: JSON.stringify(body),
     });
     return res.json();
   },
 
   async getAdmin(url) {
-    const res = await fetch(this.base + '/admin' + url);
+    const res = await fetch(this.base + '/admin' + url, {
+      credentials: 'include',
+    });
     return res.json();
   },
 
@@ -34,6 +40,7 @@ const API = {
     const res = await fetch(this.base + '/admin' + url, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
       body: JSON.stringify(body),
     });
     return res.json();
@@ -46,6 +53,7 @@ const API = {
     fd.append('file', file);
     const res = await fetch(this.base + '/admin/import', {
       method: 'POST',
+      credentials: 'include',
       body: fd,
     });
     return res.json();
