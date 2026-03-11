@@ -188,59 +188,71 @@ async function addRunner(req, res) {
   try {
     await client.query('BEGIN');
 
-    // Verificar DNI duplicado
+    // Verificar si el corredor ya existe (por DNI o Nombre)
+    let existingRunnerId = null;
+
     if (cleanDni) {
       const dniCheck = await client.query(
         'SELECT runner_id FROM runners WHERE dni = $1', [cleanDni]
       );
       if (dniCheck.rows.length > 0) {
-        await client.query('ROLLBACK');
-        return res.status(409).json({
-          error: 'DNI ya registrado',
-          existing_runner_id: dniCheck.rows[0].runner_id
-        });
+        existingRunnerId = dniCheck.rows[0].runner_id;
       }
     }
 
-    // Verificar nombre duplicado
-    const nameCheck = await client.query(
-      `SELECT runner_id FROM runners
-       WHERE LOWER(name) = LOWER($1) AND LOWER(surname) = LOWER($2)`,
-      [cleanName, cleanSurname]
-    );
-    if (nameCheck.rows.length > 0 && !req.body.force_create) {
-      await client.query('ROLLBACK');
-      return res.status(409).json({
-        error: 'Posible duplicado por nombre',
-        existing_runner_id: nameCheck.rows[0].runner_id,
-        message: 'Ya existe un corredor con ese nombre. Si son distintas personas, enviá force_create: true'
-      });
+    if (!existingRunnerId) {
+      const nameCheck = await client.query(
+        `SELECT runner_id FROM runners
+         WHERE LOWER(name) = LOWER($1) AND LOWER(surname) = LOWER($2)`,
+        [cleanName, cleanSurname]
+      );
+      if (nameCheck.rows.length > 0) {
+        if (!req.body.force_create) {
+          await client.query('ROLLBACK');
+          return res.status(409).json({
+            error: 'Posible duplicado por nombre',
+            existing_runner_id: nameCheck.rows[0].runner_id,
+            message: 'Ya existe un corredor con ese nombre. Si es la misma persona, podés buscarlo o agregarle el resultado desde su ficha. Si son distintas personas, dale "Registrar igual".',
+            needs_force: true
+          });
+        }
+      }
     }
 
-    // Generar runner_id
-    const lastId = await client.query(
-      `SELECT runner_id FROM runners ORDER BY runner_id DESC LIMIT 1`
-    );
-    const lastNum = lastId.rows.length
-      ? parseInt(lastId.rows[0].runner_id.replace('RB', ''))
-      : 0;
-    const newRunnerId = generateRunnerId(lastNum);
+    let finalRunnerId = existingRunnerId;
 
-    // Insertar corredor
-    await client.query(
-      `INSERT INTO runners (runner_id, dni, name, surname, gender, province, nationality, birth_date)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
-      [newRunnerId, cleanDni, cleanName, cleanSurname, gender,
-       province || null, nationality || 'Argentino/a',
-       birth_date || null]
-    );
+    if (!finalRunnerId) {
+      // Generar runner_id nuevo
+      const lastId = await client.query(
+        `SELECT runner_id FROM runners ORDER BY runner_id DESC LIMIT 1`
+      );
+      const lastNum = lastId.rows.length
+        ? parseInt(lastId.rows[0].runner_id.replace('RB', ''))
+        : 0;
+      finalRunnerId = generateRunnerId(lastNum);
+
+      // Insertar corredor
+      await client.query(
+        `INSERT INTO runners (runner_id, dni, name, surname, gender, province, nationality, birth_date)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
+        [finalRunnerId, cleanDni, cleanName, cleanSurname, gender,
+         province || null, nationality || 'Argentino/a',
+         birth_date || null]
+      );
+    }
 
     // Insertar resultado
     await client.query(
       `INSERT INTO race_results
          (runner_id, year, distance, category, time_raw, time_seconds, position_general, position_category)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
-      [newRunnerId, parseInt(year), distance, category || null,
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+       ON CONFLICT (runner_id, year, distance) DO UPDATE SET
+         category = EXCLUDED.category,
+         time_raw = EXCLUDED.time_raw,
+         time_seconds = EXCLUDED.time_seconds,
+         position_general = EXCLUDED.position_general,
+         position_category = EXCLUDED.position_category`,
+      [finalRunnerId, parseInt(year), distance, category || null,
        time_raw, seconds,
        position_general ? parseInt(position_general) : null,
        position_category ? parseInt(position_category) : null]
@@ -249,8 +261,10 @@ async function addRunner(req, res) {
     await client.query('COMMIT');
     res.status(201).json({
       ok: true,
-      runner_id: newRunnerId,
-      message: `Corredor registrado como ${newRunnerId}`
+      runner_id: finalRunnerId,
+      message: existingRunnerId 
+        ? `Resultado agregado exitosamente al corredor existente ${finalRunnerId}`
+        : `Corredor nuevo y resultado registrados bajo ${finalRunnerId}`
     });
   } catch (err) {
     await client.query('ROLLBACK');

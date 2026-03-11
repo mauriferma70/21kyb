@@ -238,6 +238,8 @@ function renderChart(dist) {
         y: {
           reverse: true, // Importante: Menos tiempo es mejor (arriba)
           grid: { color: 'rgba(255,255,255,0.05)' },
+          min: rows.length === 1 ? values[0] - 15 : undefined, // 15 minutos menos si hay 1 solo
+          max: rows.length === 1 ? values[0] + 15 : undefined, // 15 minutos mas
           ticks: {
             color: '#888',
             font: { family: 'DM Sans', weight: '500' },

@@ -681,13 +681,13 @@ async function submitAdd(force) {
   const data = await API.postAdmin('/runners', body);
 
   if (data.ok) {
-    toast(`${body.name} ${body.surname} → ${data.runner_id} ✓`);
+    toast(data.message);
     addToRecentTable(data.runner_id, body);
     clearAdd();
     loadDashboard();
-  } else if (data.error && data.error.includes('duplicado')) {
+  } else if (data.error && data.needs_force) {
     document.getElementById('add-dup-msg').innerHTML =
-      `Ya existe <strong>${body.name} ${body.surname}</strong> con ID <span style="color:var(--accent);font-family:var(--font-d);font-weight:700">${data.existing_runner_id}</span>. ¿Son personas distintas?`;
+      `Ya existe <strong>${body.name} ${body.surname}</strong> con ID <span style="color:var(--accent);font-family:var(--font-d);font-weight:700">${data.existing_runner_id}</span>.<br><span style="font-size:0.8rem;color:var(--text3)">${data.message}</span>`;
     document.getElementById('add-dup-warn').style.display = 'block';
   } else {
     toast(data.error || 'Error al registrar', 'error');
